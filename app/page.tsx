@@ -35,7 +35,7 @@ function MobileLayout() {
             }}
           >
       <main>
-        <h1><img src="/logos/twipalaicon.PNG" alt="twipalaicon Logo" width="175" height="100" /></h1>        
+        <h1><img src="/logos/twipalaicon.png" alt="twipalaicon Logo" width="175" height="100" /></h1>        
           {/* Your mobile-specific form or content */}        
         <CustomerCarousel/>               
       </main>
