@@ -1,0 +1,20 @@
+{
+  "name": "Standard Supermarket App",
+  "short_name": "Mega",
+  "start_url": "https://stock-well-jg1g.vercel.app/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/public/faviconv1.png",
+      "sizes": "192x192",
+      "type": "image/ico"
+    },
+    {
+      "src": "/public/faviconv1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

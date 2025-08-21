@@ -1,0 +1,6 @@
+{
+  "appId": "com.komusoft.pos",
+  "appName": "Stockwell",
+  "webDir": "out",
+  "bundledWebRuntime": false
+}
