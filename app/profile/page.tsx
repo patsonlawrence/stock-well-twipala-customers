@@ -33,12 +33,18 @@ export default function ProfilePage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
       <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-md">
         <img
-          src="/logos/stalogo.PNG"
-          alt="Standard Logo"
-          width={100}
-          height={100}
-          className="mb-4"
-          style={{ display: 'block', margin: '0 auto', textAlign: 'center' }}
+          src="/icons/twipalalogo.PNG"
+  alt="Twipala Logo"
+  width={100}
+  height={100}
+  className="mb-4"
+  style={{
+    display: 'block',
+    margin: '0 auto',
+    textAlign: 'center',
+    borderRadius: '50%', // <-- This makes it circular
+    objectFit: 'cover'    // <-- Optional: makes sure the image fills the circle
+  }}
         />
         <h1 className="text-2xl font-bold text-center mb-4">👤 Aponye Profile</h1>
         <ul className="space-y-2 text-gray-700">
