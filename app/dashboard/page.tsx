@@ -96,7 +96,7 @@ export default function Dashboard() {
                 <h3 className="text-sm text-blue-700 font-semibold">Points Balance</h3>
                  
                  <p className="text-3xl font-bold text-blue-900">
-                   {showPoints ? points.toLocaleString() : '•••••'}
+                   {showPoints ? (points ?? 0).toLocaleString() : '•••••'}
                  </p>               
               </div>
               <button
