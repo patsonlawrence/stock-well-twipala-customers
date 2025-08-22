@@ -16,7 +16,7 @@ export default function Dashboard() {
   const router = useRouter();
   const [user, setUser] = useState<{ name: string; phone: string; points: number } | null>(null);
   const [showPoints, setShowPoints] = useState(true);
-  const [points, setPoints] = useState<number>(0);
+  const [points, setPoints] = useState<number>();
   const [history, setHistory] = useState<Transaction[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -218,7 +218,7 @@ function QrScannerComponent({ userPhone, onScan }: QrScannerProps) {
 
           const date = new Date().toLocaleString();
           onScan(points, date, receiptNumber);
-          setScannedResult(`✅ Points updated to ${points.toLocaleString()}`);
+          setScannedResult(`✅ Total Points Currently ${points.toLocaleString()}`);
         } catch {
           setScannedResult('❌ Invalid QR code.');
         }
