@@ -15,9 +15,8 @@ export default function OrderPage() {
   const [customer, setCustomer] = useState("");
   const [orderNumber, setOrderNumber] = useState("");
   const [search, setSearch] = useState("");
-
   const [items, setItems] = useState([{ name: "", qty: 1, price: 0 }]);
-  const [previousOrders, setPreviousOrders] = useState([]);
+  const [previousOrders, setPreviousOrders] = useState<any[]>([]);
 
   // Example items with prices
   const productList = [
@@ -113,16 +112,26 @@ export default function OrderPage() {
   // Load previous orders  
 
 const loadPreviousOrders = async () => {
-  const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(collection(db, "orders"));
+  //const list: any = [];
+  const list: any[] = [];
 
-  const list: any = [];
-  snapshot.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+
+  snapshot.forEach((doc) => {
+    list.push({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt || 0, // fallback for old orders
+    });
+  });
+
+  // Sort manually
+  list.sort((a, b) => {
+    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+  });
 
   setPreviousOrders(list);
 };
-
-
   useEffect(() => {
     loadPreviousOrders();
   }, []);
@@ -221,7 +230,7 @@ const loadPreviousOrders = async () => {
           <ul>
             {order.items?.map((i: any, idx: number) => (
               <li key={idx}>
-                {i.name} × {i.qty} ={" "}
+                {i.name} : {i.price} * {i.qty} ={" "}
                 {(i.qty * i.price).toLocaleString()} UGX
               </li>
             ))}
@@ -275,7 +284,7 @@ const styles: any = {
     cursor: "pointer",
   },
   orderCard: {
-    background: "#f7f7f7",
+    background: "gray",
     padding: "10px",
     borderRadius: "8px",
     marginBottom: "10px",
