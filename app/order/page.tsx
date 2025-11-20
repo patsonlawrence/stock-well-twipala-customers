@@ -5,6 +5,8 @@ import {
   collection,
   addDoc,
   getDocs,
+  query,
+  orderBy,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -29,7 +31,6 @@ export default function OrderPage() {
     { name: "Tea", price: 8000 },
     { name: "Salt", price: 2000 },
   ];
-
   const customersList = [
     "John Doe",
     "Sarah",
@@ -37,16 +38,13 @@ export default function OrderPage() {
     "Janet",
     "Peter",
   ];
-
   // Search filtered items
   const filteredProducts = productList.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
-
   const addItem = () => {
     setItems([...items, { name: "", qty: 1, price: 0 }]);
   };
-
   const updateItem = (index: number, field: "name" | "qty" | "price", value: any) => {
   setItems(prev => {
     const newItems = [...prev];
@@ -59,47 +57,71 @@ export default function OrderPage() {
     return newItems;
   });
 };
-
   const removeItem = (index: number) => {
     setItems(items.filter((_, i) => i !== index));
   };
-
   // Calculate total
   const total = items.reduce((sum, item) => sum + item.qty * item.price, 0);
-
   // Save Order to Firebase
   const handleSubmit = async () => {
-    if (!customer || !orderNumber) {
-      alert("Fill all required fields!");
-      return;
-    }
-    const order = {
-      customer,
-      orderNumber,
-      items,
-      total,
-      createdAt: serverTimestamp(),
-    };
-
-    await addDoc(collection(db, "orders"), order);
-
-    alert("Order Saved!");
-
-    // Reset
-    setCustomer("");
-    setOrderNumber("");
-    setItems([{ name: "", qty: 1, price: 0 }]);
-
-    loadPreviousOrders();
+  if (!customer || !orderNumber) {
+    alert("Fill all required fields!");
+    return;
+  }
+  const order = {
+    customer,
+    orderNumber,
+    items,
+    total,
+    createdAt: serverTimestamp(),
   };
+  // Save in Firestore
+  await addDoc(collection(db, "orders"), order);
+  // Build WhatsApp message
+  
+  const message =
+    `🛒 *New Order*\n` +
+    `Customer: ${customer}\n` +
+    `Order No: ${orderNumber}\n\n` +
+    items
+      .map(
+        (i) =>
+          `${i.name} x ${i.qty} = ${(i.qty * i.price).toLocaleString()} UGX`
+      )
+      .join("\n") +
+    `\n\nTOTAL: ${total.toLocaleString()} UGX`;
 
-  // Load previous orders
-  const loadPreviousOrders = async () => {
-    const snapshot = await getDocs(collection(db, "orders"));
-    const list: any = [];
-    snapshot.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
-    setPreviousOrders(list);
-  };
+  const whatsappNumber = "256709095815"; // change to your number
+  const whatsappURL =
+    "https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(message);
+
+  // Open WhatsApp
+  setTimeout(() => {
+  window.location.href = whatsappURL;
+}, 500);
+
+
+  alert("Order Saved & Sent to WhatsApp!");
+
+  // Reset form
+  setCustomer("");
+  setOrderNumber("");
+  setItems([{ name: "", qty: 1, price: 0 }]);
+
+  loadPreviousOrders();
+};
+  // Load previous orders  
+
+const loadPreviousOrders = async () => {
+  const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+  const snapshot = await getDocs(q);
+
+  const list: any = [];
+  snapshot.forEach((doc) => list.push({ id: doc.id, ...doc.data() }));
+
+  setPreviousOrders(list);
+};
+
 
   useEffect(() => {
     loadPreviousOrders();
@@ -112,18 +134,17 @@ export default function OrderPage() {
       {/* Customer select */}
       <label>Customer</label>
       <select
-  value={customer}
-  onChange={(e) => setCustomer(e.target.value)}
-  style={styles.input}
->
-  <option value="">Select customer...</option>
-  {customersList.map((c, idx) => (
-    <option key={idx} value={c}>
-      {c}
-    </option>
-  ))}
-</select>
-
+        value={customer}
+        onChange={(e) => setCustomer(e.target.value)}
+        style={styles.input}
+        >
+        <option value="">Select customer...</option>
+        {customersList.map((c, idx) => (
+        <option key={idx} value={c}>
+        {c}
+        </option>
+        ))}
+        </select>
       {/* Order number */}
       <label>Order Number</label>
       <input
