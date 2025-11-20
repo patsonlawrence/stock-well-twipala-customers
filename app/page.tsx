@@ -4,8 +4,52 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSwipeable } from 'react-swipeable';
 import { FaWhatsapp, FaBeer, FaCoffee, FaFacebook, FaTwitter, FaInstagram } from 'react-icons/fa';
+import { LocalNotifications } from "@capacitor/local-notifications";
+import { Geolocation } from "@capacitor/geolocation";
 
 export default function Home() {
+  useEffect(() => {
+  // 💡 1. Guard: only run on client
+  if (typeof window === "undefined") return;
+
+  // 💡 2. Guard: Capacitor plugins exist?
+  const isCapacitor = () => {
+    const cap = (window as any).Capacitor;
+    return !!(cap?.isNativePlatform?.() || cap?.isPluginAvailable);
+  };
+  if (!isCapacitor()) {
+    console.log("Capacitor environment not detected. Skipping notifications & geolocation.");
+    return;
+  }
+  // 💡 3. Guard: Geolocation supported?
+  if (!navigator.geolocation) {
+    console.log("Browser does not support geolocation.");
+    return;
+  }
+  // === Now it's safe to run Capacitor code ===
+  (async () => {
+    try {
+        // 4️⃣ Only schedule notifications if the plugin is available
+        if ((window as any).Capacitor.isPluginAvailable('LocalNotifications')) {
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                title: "Hello",
+                body: "This is a test notification",
+                id: 1,
+                schedule: { at: new Date(new Date().getTime() + 1000 * 5) } // 5 seconds later
+              },
+            ],
+          });
+          console.log("Notification scheduled!");
+        } else {
+          console.log("LocalNotifications plugin not available. Skipping.");
+        }
+      } catch (err) {
+        console.error("Error scheduling notification:", err);
+      }
+  })();
+}, []);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -31,7 +75,7 @@ function MobileLayout() {
         minHeight: '100vh',
         padding: '0.5rem',
         alignItems: 'left',
-        backgroundColor: 'white',
+        backgroundColor: 'gray',
             }}
           >
       <main>
@@ -46,8 +90,8 @@ function MobileLayout() {
     bottom: '20px',
     left: '50%',
     transform: 'translateX(-50%)',
-    backgroundColor: '#097520ff',
-    color: '#ffffff',
+    backgroundColor: 'white',
+    color: 'green',
     padding: '0.75rem 1.5rem',
     border: 'none',
     borderRadius: '1.75rem',
@@ -98,7 +142,7 @@ function MobileLayout() {
       objectFit: 'contain',
     }}
   />
-  Kinoonya Branch
+  Whatsapp Us
 </a>    
     <button
       onClick={() => router.push('/login')}
@@ -108,9 +152,9 @@ function MobileLayout() {
           left: '12%',
           transform: 'translateX(-50%)',
           backgroundColor: '#f78e16',
-          color: 'green',
+          color: 'white',
           padding: '1rem 1.75rem',
-          border: '2px solid green',
+          border: '2px solid white',
           borderRadius: '1.75rem',
           cursor: 'pointer',
           fontWeight: 500,
@@ -133,9 +177,9 @@ function MobileLayout() {
           left: '37%',
           transform: 'translateX(-50%)',
           backgroundColor: '#f78e16',
-          color: 'green',
+          color: 'white',
           padding: '1rem 1.5rem',
-          border: '2px solid green',
+          border: '2px solid white',
           borderRadius: '1.75rem',
           cursor: 'pointer',
           fontWeight: 500,
@@ -151,16 +195,16 @@ function MobileLayout() {
         🏷️Offers
       </button>
       <button
-      onClick={() => router.push('/login')}
+      onClick={() => router.push('/order')}
         style={{
           position: 'fixed',
           bottom: '80px',
           left: '62%',
           transform: 'translateX(-50%)',
           backgroundColor: '#f78e16',
-          color: 'green',
+          color: 'white',
           padding: '1rem 1.5rem',
-          border: '2px solid green',
+          border: '2px solid white',
           borderRadius: '1.75rem',
           cursor: 'pointer',
           fontWeight: 500,
@@ -173,7 +217,7 @@ function MobileLayout() {
     textAlign: 'center',
         }}
       >
-        📍Branches
+        🛒Orders
       </button>
       <button
       onClick={() => router.push('/signup')}
@@ -183,9 +227,9 @@ function MobileLayout() {
           left: '88%',
           transform: 'translateX(-50%)',
           backgroundColor: '#f78e16',
-          color: 'green',
+          color: 'white',
           padding: '1rem 1.75rem',
-          border: '2px solid green',
+          border: '2px solid white',
           borderRadius: '1.75rem',
           cursor: 'pointer',
           fontWeight: 500,
@@ -224,7 +268,7 @@ function MobileLayout() {
           textAlign: 'center',       
         }}
       >
-       📞 Kinoonya Branch
+       📞 Telephone Us
       </a>
     <div
   style={{
@@ -428,39 +472,6 @@ function DesktopLayout() {
     </div>
   );
 }
-import { LocalNotifications } from '@capacitor/local-notifications';
 
-LocalNotifications.schedule({
-  notifications: [
-    {
-      title: "On sale",
-      body: "Widgets are 10% off. Act fast!",
-      id: 1,
-      schedule: { at: new Date(Date.now() + 1000 * 5) },
-      sound: undefined,
-      attachments: undefined,
-      actionTypeId: "",
-      extra: null
-    }
-  ]
-});
-import { Geolocation } from '@capacitor/geolocation';
-(async () => {
-  try {
-    const position = await Geolocation.getCurrentPosition();
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-    console.log('Lat:', latitude, 'Lng:', longitude);
-  } catch (error) {
-    if (!navigator.geolocation) {
-  console.error('Geolocation is not supported by this browser.');
-} else {
-  navigator.geolocation.getCurrentPosition(
-    pos => console.log('Navigator position:', pos),
-    err => console.error('Navigator error:', err)
-  );
-}
-  }
-})();
 
 
