@@ -10,6 +10,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import Link from "next/link";
 
 export default function OrderPage() {
   const [customer, setCustomer] = useState("");
@@ -113,7 +114,6 @@ export default function OrderPage() {
 
 const loadPreviousOrders = async () => {
   const snapshot = await getDocs(collection(db, "orders"));
-  //const list: any = [];
   const list: any[] = [];
 
 
@@ -216,12 +216,35 @@ const loadPreviousOrders = async () => {
       <button onClick={handleSubmit} style={styles.submitBtn}>
         ✅ Save Order
       </button>
+<hr />        
 
-      <hr />
 
-      {/* Previous Orders */}
-      <h2>📦 Previous Orders</h2>
+<Link
+  href="/"
+  style={{
+    position: "fixed",
+    bottom: "20px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    backgroundColor: "white",
+    color: "green",
+    padding: "0.75rem 1.5rem",
+    border: "none",
+    borderRadius: "1.75rem",
+    cursor: "pointer",
+    fontWeight: 500,
+    fontSize: "1rem",
+    width: "75%",
+    zIndex: 1000,
+    textAlign: "center",
+    textDecoration: "none",
+  }}
+>
+  Home Page
+</Link>
 
+
+{/* Previous Orders */}
       {previousOrders.map((order: any) => (
         <div key={order.id} style={styles.orderCard}>
           <strong>{order.customer}</strong> — #{order.orderNumber}
