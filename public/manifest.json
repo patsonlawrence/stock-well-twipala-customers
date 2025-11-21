@@ -14,9 +14,9 @@
       "type": "image/png"
     },
     {
-      "src": "/twipalalogo512.png",
+      "src": "/twipalalogo2.ico",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/ico"
     }
   ]
 }
