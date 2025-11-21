@@ -98,7 +98,7 @@ export default function OrderPage() {
     "",
     "Thank you for your order! Remember to attach clear order photos too here.",
   ];
-  const whatsappURL = `https://wa.me/?text=${encodeURIComponent(messageLines.join("\n"))}`;
+  const whatsappURL = `https://wa.me/256709095815?text=${encodeURIComponent(messageLines.join("\n"))}`;
 
   // Open WhatsApp
   window.open(whatsappURL, "_blank");
