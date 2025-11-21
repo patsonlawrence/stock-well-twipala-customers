@@ -30,7 +30,7 @@ export default function Home() {
   (async () => {
     try {
         // 4️⃣ Only schedule notifications if the plugin is available
-        if ((window as any).Capacitor.isPluginAvailable('LocalNotifications')) {
+    /*    if ((window as any).Capacitor.isPluginAvailable('LocalNotifications')) {
           await LocalNotifications.schedule({
             notifications: [
               {
@@ -44,7 +44,7 @@ export default function Home() {
           console.log("Notification scheduled!");
         } else {
           console.log("LocalNotifications plugin not available. Skipping.");
-        }
+        }*/
       } catch (err) {
         console.error("Error scheduling notification:", err);
       }

@@ -21,21 +21,26 @@ export default function OrderPage() {
 
   // Example items with prices
   const productList = [
-    { name: "Sugar", price: 6000 },
-    { name: "Rice", price: 5000 },
-    { name: "Cooking Oil", price: 12000 },
-    { name: "Bread", price: 3500 },
-    { name: "Flour", price: 4500 },
-    { name: "Milk", price: 3000 },
-    { name: "Soap", price: 2500 },
-    { name: "Tea", price: 8000 },
+    { name: "MAX PREP RAZORS 3 PACK -1 CTN(600)", price: 1440000 },
+    { name: "MAX PREP RAZORS 6 PACK -1 CTN(300)", price: 1440000 },
+    { name: "MAX PREP RAZORS 3 PACK -1 OUTER(100)", price: 240000 },
+    { name: "MAX PREP RAZORS 6 PACK -1 OUTER(30)", price: 144000 },
+    { name: "AFRICAN FARM DATES 360G", price: 4100 },
+    { name: "AFRICAN FARM DATES 450G", price: 6150 },
+    { name: "AFRICAN FARM DATES 630G", price: 10600 },
+    { name: "AFRICAN FARM DATES 860G", price: 12300 },
     { name: "Salt", price: 2000 },
   ];
   const customersList = [
-    "John Doe",
-    "Sarah",
-    "Michael",
-    "Janet",
+    "STANDARD SUPERMARKET LIMITED, APONYE BRANCH",
+    "STANDARD SUPERMARKET LIMITED, GARDEN CITY BRANCH",
+    "STANDARD SUPERMARKET LIMITED, BUGOLOBI BRANCH",
+    "ECO - MART SUPERMARKET LIMITED, KIWATULE BRANCH",
+    "ECO - MART SUPERMARKET LIMITED, KISAASI BRANCH",
+    "ECO - MART SUPERMARKET LIMITED, KANSANGA BRANCH",
+    "ECO - MART SUPERMARKET LIMITED, SEGUKU BRANCH",
+    "Peter",
+    "Peter",
     "Peter",
   ];
   // Search filtered items
@@ -63,11 +68,14 @@ export default function OrderPage() {
   // Calculate total
   const total = items.reduce((sum, item) => sum + item.qty * item.price, 0);
   // Save Order to Firebase
-  const handleSubmit = async () => {
+ const handleSubmit = async () => {
+  console.log("Submitting order...");
+
   if (!customer || !orderNumber) {
     alert("Fill all required fields!");
     return;
   }
+
   const order = {
     customer,
     orderNumber,
@@ -75,67 +83,98 @@ export default function OrderPage() {
     total,
     createdAt: serverTimestamp(),
   };
-  // Save in Firestore
-  await addDoc(collection(db, "orders"), order);
-  // Build WhatsApp message
-  
-  const message =
-    `🛒 *New Order*\n` +
-    `Customer: ${customer}\n` +
-    `Order No: ${orderNumber}\n\n` +
-    items
-      .map(
-        (i) =>
-          `${i.name} x ${i.qty} = ${(i.qty * i.price).toLocaleString()} UGX`
-      )
-      .join("\n") +
-    `\n\nTOTAL: ${total.toLocaleString()} UGX`;
 
-  const whatsappNumber = "256709095815"; // change to your number
-  const whatsappURL =
-    "https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(message);
+  console.log("Order object:", order);
+
+  // Build WhatsApp message and URL
+  const messageLines = [
+    `Order for: ${customer}`,
+    `Order No: ${orderNumber}`,
+    "",
+    "Items:",
+    ...items.map((it) => `${it.name || "(no name)"} x${it.qty} = ${(it.qty * it.price).toLocaleString()} UGX`),
+    "",
+    `Total: ${total.toLocaleString()} UGX`,
+    "",
+    "Thank you for your order! Remember to attach clear order photos too here.",
+  ];
+  const whatsappURL = `https://wa.me/?text=${encodeURIComponent(messageLines.join("\n"))}`;
 
   // Open WhatsApp
-  setTimeout(() => {
-  window.location.href = whatsappURL;
-}, 500);
+  window.open(whatsappURL, "_blank");
 
+  // SAVE ORDER
+  try {
+  const result = await addDoc(collection(db, "orders"), order);
+  console.log("Order saved to Firestore:", result.id);
+} catch (err) {
+  console.error("🔥 Firestore SAVE ERROR:", err);
+  const message = err instanceof Error ? err.message : String(err);
+  alert("Error saving order: " + message);
+  return;
+}
 
-  alert("Order Saved & Sent to WhatsApp!");
+  /*
+  try {
+    const result = await addDoc(collection(db, "orders"), order);
+    console.log("Order saved to Firestore:", result.id);
+  } catch (err) {
+    console.error("ERROR saving order:", err);
+    alert("Failed to save order.");
+    return; // STOP HERE
+  }*/
 
-  // Reset form
+  // LOAD ORDERS
+  try {
+    console.log("Loading previous orders...");
+    await loadPreviousOrders();
+    console.log("Previous orders loaded.");
+  } catch (err) {
+    console.error("ERROR loading previous orders:", err);
+    alert("Failed to load previous orders.");
+    return; // STOP HERE
+  }
+
+  // CLEAR FIELDS (ONLY if all above succeeded)
+  console.log("Clearing fields...");
   setCustomer("");
   setOrderNumber("");
   setItems([{ name: "", qty: 1, price: 0 }]);
+  setSearch("");
 
-  loadPreviousOrders();
+  alert("Order Saved & Sent to WhatsApp!");
 };
-  // Load previous orders  
 
+
+  // Load previous orders 
 const loadPreviousOrders = async () => {
-  const snapshot = await getDocs(collection(db, "orders"));
-  const list: any[] = [];
+  try {
+    const snapshot = await getDocs(collection(db, "orders"));
+    const list: any[] = [];
 
-
-  snapshot.forEach((doc) => {
-    list.push({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt || 0, // fallback for old orders
+    snapshot.forEach((doc) => {
+      list.push({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt || 0,
+      });
     });
-  });
 
-  // Sort manually
-  list.sort((a, b) => {
-    return (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
-  });
+    list.sort(
+      (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+    );
 
-  setPreviousOrders(list);
+    setPreviousOrders(list);
+    return true; // ⬅⬅⬅ important
+  } catch (err) {
+    console.error("loadPreviousOrders ERROR:", err);
+    throw err; // ⬅⬅ ensures handleSubmit catches error
+  }
 };
+
   useEffect(() => {
     loadPreviousOrders();
   }, []);
-
   return (
     <div style={{ padding: "1rem", maxWidth: "600px", margin: "0 auto" }}>
       <h2>🛒 Create New Order</h2>
@@ -162,9 +201,7 @@ const loadPreviousOrders = async () => {
         placeholder="Enter order number"
         style={styles.input}
       />
-
       <h3>Items</h3>
-
       {/* Search input */}
       <input
         type="text"
@@ -173,7 +210,6 @@ const loadPreviousOrders = async () => {
         onChange={(e) => setSearch(e.target.value)}
         style={styles.input}
       />
-
       {/* Item rows */}
       {items.map((item, index) => (
   <div key={index} style={styles.row}>
@@ -216,7 +252,25 @@ const loadPreviousOrders = async () => {
       <button onClick={handleSubmit} style={styles.submitBtn}>
         ✅ Save Order
       </button>
-<hr />        
+      
+<hr />
+<h4>🛒 Previous Orders</h4>
+{/* Previous Orders */}
+      {previousOrders.map((order: any) => (
+        <div key={order.id} style={styles.orderCard}>
+          <strong>{order.customer}</strong> — #{order.orderNumber}
+          <br />
+          Total: {order.total.toLocaleString()} UGX
+          <ul>
+            {order.items?.map((i: any, idx: number) => (
+              <li key={idx}>
+                {i.name} : {i.price} * {i.qty} ={" "}
+                {(i.qty * i.price).toLocaleString()} UGX
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}        
 
 
 <Link
@@ -244,22 +298,6 @@ const loadPreviousOrders = async () => {
 </Link>
 
 
-{/* Previous Orders */}
-      {previousOrders.map((order: any) => (
-        <div key={order.id} style={styles.orderCard}>
-          <strong>{order.customer}</strong> — #{order.orderNumber}
-          <br />
-          Total: {order.total.toLocaleString()} UGX
-          <ul>
-            {order.items?.map((i: any, idx: number) => (
-              <li key={idx}>
-                {i.name} : {i.price} * {i.qty} ={" "}
-                {(i.qty * i.price).toLocaleString()} UGX
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
     </div>
   );
 }
