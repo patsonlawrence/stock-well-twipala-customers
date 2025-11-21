@@ -322,8 +322,8 @@ function MobileLayout() {
 function CustomerCarousel() {
   const images = [
     
-    '/promos/1.PNG','/promos/2.PNG',
-    '/promos/3.PNG','/promos/4.PNG',
+    '/promos/1.WebP','/promos/2.WebP',
+    '/promos/3.WebP','/promos/4.WebP',
     
   ];
 
