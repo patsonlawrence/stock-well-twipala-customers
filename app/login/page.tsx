@@ -43,10 +43,8 @@ export default function Login() {
     (input.username === user.email || input.username === user.phone) &&
     input.password === user.password
   );
-
   if (foundUser) {
     alert('Login successful!');
-
     if (input.remember) {
       localStorage.setItem('loggedIn', 'true');
       localStorage.setItem('loggedInUser', JSON.stringify(foundUser));
@@ -57,12 +55,10 @@ export default function Login() {
     alert('Incorrect email/phone or password.');
   }
 };
-
-
   return (
     <>
       <Head>
-        <title>Kinoonya Login</title>
+        <title>Twipala Login</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
       <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
@@ -152,7 +148,7 @@ export default function Login() {
           zIndex: 1000,
         }}
       >
-        Back
+        Home
       </button> 
           </p>
           
