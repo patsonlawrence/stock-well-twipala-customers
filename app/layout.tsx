@@ -17,7 +17,7 @@ export const metadata = {
   title: "StockWell App",
   description: "Order management system",
   manifest: "/manifest.json",
-  themeColor: "#008000",
+  
 };
 
 export const viewport = {

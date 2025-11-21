@@ -321,12 +321,10 @@ function MobileLayout() {
 }
 function CustomerCarousel() {
   const images = [
-    '/promos/STANDARDLOGO.PNG',
-    '/promos/contactus.PNG',
-    '/promos/monti.PNG',
+    
     '/promos/1.PNG','/promos/2.PNG',
     '/promos/3.PNG','/promos/4.PNG',
-    '/promos/5.PNG','/promos/6.PNG',
+    
   ];
 
   const [index, setIndex] = useState(0);
