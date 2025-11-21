@@ -36,7 +36,6 @@ export default function Login() {
     alert('No user found. Please sign up first.');
     return;
   }
-
   const users = JSON.parse(stored); // ⬅️ This is now an array
 
   const foundUser = users.find((user: any) =>
@@ -49,7 +48,6 @@ export default function Login() {
       localStorage.setItem('loggedIn', 'true');
       localStorage.setItem('loggedInUser', JSON.stringify(foundUser));
     }
-
     router.push('/dashboard');
   } else {
     alert('Incorrect email/phone or password.');
@@ -77,7 +75,7 @@ export default function Login() {
     objectFit: 'cover'    // <-- Optional: makes sure the image fills the circle
   }}
 />
-          <h2 className="text-2xl font-bold text-center mb-6">Kinoonya Login</h2>
+          <h2 className="text-2xl font-bold text-center mb-6">Twipala Login</h2>
           <form className="space-y-5" onSubmit={handleLogin}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-600">
