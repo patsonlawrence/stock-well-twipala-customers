@@ -11,13 +11,15 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
 // ✅ Add manifest, icons, and theme color
 export const metadata = {
   title: "StockWell App",
   description: "Order management system",
   manifest: "/manifest.json",
-  
+  icons: {
+    icon: "/faviconv1.ico",
+    apple: "/faviconv1.ico"
+  },
 };
 
 export const viewport = {
@@ -30,13 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        {/* Fallbacks in case metadata is skipped */}
-        <link rel="manifest" href="/manifest.json" />                
-        <link rel="apple-touch-icon" href="/public/faviconv1.ico" />
-        <link rel="icon" href="/faviconv1.ico" />
-      </head>
+    <html lang="en">      
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
