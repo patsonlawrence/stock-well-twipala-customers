@@ -73,7 +73,7 @@ export default function ManagerDashboard() {
           <a href="/admin/inventory" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
             Inventory
           </a>
-          <a href="/orders" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
+          <a href="/order" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
             Orders
           </a>
           <a href="/reports" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">

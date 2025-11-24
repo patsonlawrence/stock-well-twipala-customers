@@ -88,7 +88,6 @@ export default function SalesDashboard() {
           ))}
         </ul>
       </div>
-
       {/* Quick Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Link href="/admin/orders" className="block">
@@ -96,7 +95,6 @@ export default function SalesDashboard() {
     Add Order
   </button>
 </Link>
-
         <button className="bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-xl shadow transition">View Reports</button>
         <button className="bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-xl shadow transition">Top Products</button>
         <button className="bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-xl shadow transition">Team Performance</button>

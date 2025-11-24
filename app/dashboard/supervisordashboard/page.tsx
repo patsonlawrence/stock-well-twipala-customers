@@ -49,12 +49,7 @@ export default function SupervisorDashboard() {
         <div className="flex items-center space-x-4">
           <span className="text-gray-500">Nov 22, 2025</span>
           <div className="w-10 h-10 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold">P</div>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md shadow"
-          >
-            Logout
-          </button>
+          
         </div>
       </header>
 
@@ -134,6 +129,12 @@ export default function SupervisorDashboard() {
         <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 py-3 rounded-xl shadow transition">Approve Orders</button>
         <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 py-3 rounded-xl shadow transition">View Reports</button>
         <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 py-3 rounded-xl shadow transition">Team Performance</button>
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md shadow"
+          >
+            Logout
+          </button>
       </div>
     </div>
   );
