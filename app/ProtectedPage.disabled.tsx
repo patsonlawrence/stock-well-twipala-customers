@@ -37,10 +37,8 @@ export default function ProtectedPage({ children }: { children: React.ReactNode 
         return;
       }
 
-      // The route they should be allowed on
       const allowedPath = getDefaultRouteForRole(role);
 
-      // If they try entering a dashboard that isn't theirs:
       if (!pathname.startsWith(allowedPath)) {
         alert("Access denied!");
         router.push(allowedPath);
