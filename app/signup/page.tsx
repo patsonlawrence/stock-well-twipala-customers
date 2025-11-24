@@ -92,13 +92,13 @@ export default function Signup() {
           <div className="flex flex-col items-center justify-center min-h-screen bg-white-100 px-4">
         {/* ✅ Logo here */}
         <img
-          src="/logos/twipalalogo.PNG"
+          src="/icons/twipalalogo.PNG"
           alt="Twipala Logo"
           width={100}
-          height={100}
+          height={100}          
           className="mb-4"
-        />
-        
+          style={{ borderRadius: '50%',objectFit: 'cover' }}
+        />        
           <h2 className="text-2xl font-bold text-center mb-6">Twipala Sign Up & Earn</h2>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} className="w-full p-2 border rounded" required />

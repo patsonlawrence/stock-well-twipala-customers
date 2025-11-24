@@ -1,22 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDocs,
-} from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase-auth";
+import { useRouter } from "next/navigation";
+//import { roleDashboards } from "@/lib/dashboards";
+//import ProtectedRoute from "@/app/ProtectedPage";
 
-export default function InventoryAdminPage() {
+// ----- Inventory Page Content -----
+function AdminInventoryPageContent() {
+  const router = useRouter();
+
   const [products, setProducts] = useState<any[]>([]);
   const [name, setName] = useState("");
   const [price, setPrice] = useState<number | string>("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Load products
   const loadProducts = async () => {
     const snap = await getDocs(collection(db, "products"));
     const list: any[] = [];
@@ -28,55 +30,62 @@ export default function InventoryAdminPage() {
     loadProducts();
   }, []);
 
-  // ADD OR EDIT PRODUCT
+  // Add or edit product
   const saveProduct = async () => {
-    if (!name || !price) {
-      alert("Name & price required!");
-      return;
-    }
+    try {
+      if (!name || !price) {
+        alert("Name & price required!");
+        return;
+      }
 
-    if (editingId) {
-      // EDIT MODE
-      await updateDoc(doc(db, "products", editingId), {
-        name,
-        price: Number(price),
-      });
-      alert("Product updated!");
-    } else {
-      // ADD MODE
-      await addDoc(collection(db, "products"), {
-        name,
-        price: Number(price),
-      });
-      alert("Product added!");
-    }
+      if (editingId) {
+        await updateDoc(doc(db, "products", editingId), { name, price: Number(price) });
+        alert("Product updated!");
+      } else {
+        await addDoc(collection(db, "products"), { name, price: Number(price) });
+        alert("Product added!");
+      }
 
-    setName("");
-    setPrice("");
-    setEditingId(null);
-    loadProducts();
+      setName("");
+      setPrice("");
+      setEditingId(null);
+      loadProducts();
+    } catch (err: any) {
+      console.error("SAVE ERROR:", err);
+      alert("Error: " + err.message);
+    }
   };
 
-  // DELETE PRODUCT
+  // Delete product
   const removeProduct = async (id: string) => {
     if (!confirm("Delete this product?")) return;
-
     await deleteDoc(doc(db, "products", id));
     alert("Product deleted!");
     loadProducts();
   };
 
-  // LOAD PRODUCT INTO FORM FOR EDITING
+  // Load product into form for editing
   const editProduct = (p: any) => {
     setName(p.name);
     setPrice(p.price);
     setEditingId(p.id);
   };
 
+  // Logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/");
+    } catch (err: any) {
+      console.error("Logout failed:", err.message);
+    }
+  };
+
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
       <h2>📦 Inventory Admin</h2>
 
+      {/* Add/Edit Form */}
       <div style={styles.card}>
         <h3>{editingId ? "✏️ Edit Product" : "➕ Add Product"}</h3>
 
@@ -113,8 +122,8 @@ export default function InventoryAdminPage() {
         )}
       </div>
 
+      {/* Current Inventory */}
       <h3 style={{ marginTop: "30px" }}>📋 Current Inventory</h3>
-
       {products.map((p) => (
         <div key={p.id} style={styles.itemRow}>
           <div>
@@ -133,66 +142,49 @@ export default function InventoryAdminPage() {
           </div>
         </div>
       ))}
+
+      {/* Floating Logout Button */}
+      <button
+        onClick={handleLogout}
+        style={{
+          position: "fixed",
+          bottom: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          backgroundColor: "white",
+          color: "green",
+          padding: "0.75rem 1.5rem",
+          border: "none",
+          borderRadius: "1.75rem",
+          cursor: "pointer",
+          fontWeight: 500,
+          fontSize: "1rem",
+          width: "75%",
+          zIndex: 1000,
+          textAlign: "center",
+          boxShadow: "0px 2px 8px rgba(0,0,0,0.2)",
+        }}
+      >
+        Logout
+      </button>
     </div>
   );
 }
 
+// ----- Styles -----
 const styles = {
-  card: {
-    padding: "15px",
-    background: "#f5f5f5",
-    borderRadius: "10px",
-    marginBottom: "20px",
-  },
-  input: {
-    width: "100%",
-    padding: "10px",
-    marginBottom: "10px",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-  },
-  saveBtn: {
-    width: "100%",
-    padding: "12px",
-    background: "green",
-    color: "white",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-  },
-  cancelBtn: {
-    width: "100%",
-    padding: "12px",
-    background: "gray",
-    color: "white",
-    borderRadius: "6px",
-    border: "none",
-    marginTop: "8px",
-    cursor: "pointer",
-  },
-  itemRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    background: "#eee",
-    padding: "12px",
-    borderRadius: "8px",
-    marginBottom: "10px",
-  },
-  editBtn: {
-    padding: "8px 12px",
-    marginRight: "6px",
-    background: "#007bff",
-    color: "white",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-  },
-  deleteBtn: {
-    padding: "8px 12px",
-    background: "red",
-    color: "white",
-    borderRadius: "6px",
-    border: "none",
-    cursor: "pointer",
-  },
+  card: { padding: "15px", background: "#f5f5f5", borderRadius: "10px", marginBottom: "20px" },
+  input: { width: "100%", padding: "10px", marginBottom: "10px", borderRadius: "6px", border: "1px solid #ccc" },
+  saveBtn: { width: "100%", padding: "12px", background: "green", color: "white", borderRadius: "6px", border: "none", cursor: "pointer" },
+  cancelBtn: { width: "100%", padding: "12px", background: "gray", color: "white", borderRadius: "6px", border: "none", marginTop: "8px", cursor: "pointer" },
+  itemRow: { display: "flex", justifyContent: "space-between", background: "#eee", padding: "12px", borderRadius: "8px", marginBottom: "10px" },
+  editBtn: { padding: "8px 12px", marginRight: "6px", background: "#007bff", color: "white", borderRadius: "6px", border: "none", cursor: "pointer" },
+  deleteBtn: { padding: "8px 12px", background: "red", color: "white", borderRadius: "6px", border: "none", cursor: "pointer" },
 };
+
+// ----- Export Wrapped with ProtectedRoute -----
+export default function AdminInventoryPage() {
+  return (
+          <AdminInventoryPageContent />    
+  );
+}

@@ -84,7 +84,7 @@ function MobileLayout() {
         <CustomerCarousel/>               
       </main>
      <a
- onClick={() => router.push('/login')}  
+ onClick={() => router.push('/adminlogin')}  
   style={{
     position: 'fixed',
     bottom: '20px',
@@ -145,7 +145,7 @@ function MobileLayout() {
   Whatsapp Us
 </a>    
     <button
-      onClick={() => router.push('/login')}
+      onClick={() => router.push('/adminlogin')}
         style={{
           position: 'fixed',
           bottom: '80px',
@@ -167,10 +167,10 @@ function MobileLayout() {
     textAlign: 'center',
         }}
       >
-        💰CashBack
+        🧑‍💻BackOffice
       </button>
       <button
-      onClick={() => router.push('/login')}
+      onClick={() => router.push('/adminlogin')}
         style={{
           position: 'fixed',
           bottom: '80px',
@@ -195,7 +195,7 @@ function MobileLayout() {
         🏷️Offers
       </button>
       <button
-      onClick={() => router.push('/order')}
+      onClick={() => router.push('/adminlogin')}
         style={{
           position: 'fixed',
           bottom: '80px',
