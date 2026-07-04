@@ -13,6 +13,7 @@
     "@capacitor/geolocation": "^7.1.4",
     "@capacitor/local-notifications": "^7.0.1",
     "@heroicons/react": "^2.2.0",
+    "@react-google-maps/api": "^2.20.8",
     "chart.js": "^4.5.1",
     "cordova-plugin-app-launcher": "^0.4.0",
     "firebase": "^12.6.0",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/google.maps": "^3.58.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-chartjs-2": "^2.0.2",

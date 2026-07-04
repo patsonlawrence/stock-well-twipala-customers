@@ -1,109 +1,446 @@
 "use client";
 
-import { useState } from "react";
-import { Line, Bar } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from "chart.js";
+import { useState, useEffect } from "react";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { getAuth } from "firebase/auth";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+// -------------------------
+// Types
+// -------------------------
+interface Item {
+  name: string;
+  qty: number;
+  price: number;
+}
+
+interface Order {
+  id?: string;
+  createdAt?: any;
+  customer?: string;
+  items?: Item[];
+  orderNumber?: string;
+  orderedBy?: string;
+  total?: number;
+  username?: string;
+}
+
+interface Client {
+  id: string;
+  name: string;
+  orders: number;
+}
+interface ChartDataType {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    borderColor: string;
+    backgroundColor: string;
+    tension: number;
+  }[];
+}
+
 
 export default function SalesDashboard() {
   const router = useRouter();
+  const auth = getAuth();
 
-  const [salesData, setSalesData] = useState({
-    labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-    datasets: [
-      {
-        label: "Orders Completed",
-        data: [5, 7, 3, 8, 6, 10, 4],
-        borderColor: "#10B981",
-        backgroundColor: "rgba(16,185,129,0.1)",
-        tension: 0.3,
-      },
-    ],
+  // -------------------------
+  // States
+  // -------------------------
+  const [username, setUsername] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+
+  const [weeklyOrders, setWeeklyOrders] = useState(0);
+  const [monthlyOrders, setMonthlyOrders] = useState(0);
+  const [yearlyOrders, setYearlyOrders] = useState(0);
+
+  const [revenueTotals, setRevenueTotals] = useState({
+    week: 0,
+    month: 0,
+    year: 0,
+    lifetime: 0,
   });
 
-  const [topClients, setTopClients] = useState([
-    { id: 1, name: "Acme Corp", orders: 12 },
-    { id: 2, name: "Beta LLC", orders: 8 },
-    { id: 3, name: "Gamma Inc", orders: 5 },
-  ]);
+  const [topClients, setTopClients] = useState<Client[]>([]);
+  const [topProducts, setTopProducts] = useState<Record<string, number>>({});
 
-  const handleLogout = () => {
-    console.log("User logged out");
-    router.push("/"); // redirect to home or login page
+  const [weeklyChartData, setWeeklyChartData] = useState<ChartDataType>({
+  labels: [],
+  datasets: [
+    {
+      label: "Orders Completed",
+      data: [],
+      borderColor: "#10B981",
+      backgroundColor: "rgba(16,185,129,0.1)",
+      tension: 0.3,
+    },
+  ],
+});
+
+
+  // -------------------------
+  // Load username & dark mode
+  // -------------------------
+  useEffect(() => {
+    setUsername(localStorage.getItem("userName") || "User");
+    setDarkMode(localStorage.getItem("darkMode") === "true");
+  }, []);
+
+  const toggleDarkMode = () => {
+    const updated = !darkMode;
+    setDarkMode(updated);
+    localStorage.setItem("darkMode", updated.toString());
   };
 
+  // -------------------------
+  // Firestore real-time listener
+  // -------------------------
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (!user) return;
+
+      const ordersRef = collection(db, "orders");
+      const q = query(ordersRef, where("orderedBy", "==", user.email));
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const orders: Order[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        calculateStats(orders);
+        calculateTopClients(orders);
+        calculateTopProducts(orders);
+        generateWeeklyChart(orders);
+      });
+
+      return () => unsubscribe();
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
+
+  // -------------------------
+  // FIXED STAT CALCULATOR
+  // -------------------------
+  const calculateStats = (orders: Order[]) => {
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+
+    let week = 0,
+      month = 0,
+      year = 0;
+
+    let revenueWeek = 0,
+      revenueMonth = 0,
+      revenueYear = 0,
+      revenueLifetime = 0;
+
+    orders.forEach((order) => {
+      const date = order.createdAt?.toDate
+        ? order.createdAt.toDate()
+        : new Date(order.createdAt || 0);
+
+      const total = order.total || 0;
+
+      if (date >= startOfWeek) {
+        week++;
+        revenueWeek += total;
+      }
+      if (date >= startOfMonth) {
+        month++;
+        revenueMonth += total;
+      }
+      if (date >= startOfYear) {
+        year++;
+        revenueYear += total;
+      }
+
+      revenueLifetime += total;
+    });
+
+    setWeeklyOrders(week);
+    setMonthlyOrders(month);
+    setYearlyOrders(year);
+    setRevenueTotals({
+      week: revenueWeek,
+      month: revenueMonth,
+      year: revenueYear,
+      lifetime: revenueLifetime,
+    });
+  };
+
+  // -------------------------
+  // Top Clients
+  // -------------------------
+  const calculateTopClients = (orders: Order[]) => {
+    const clientMap: Record<string, number> = {};
+
+    orders.forEach((order) => {
+      const name = order.customer || "Unknown";
+      clientMap[name] = (clientMap[name] || 0) + 1;
+    });
+
+    const cleaned = Object.entries(clientMap)
+      .map(([name, count]) => ({ id: name, name, orders: count }))
+      .sort((a, b) => b.orders - a.orders)
+      .slice(0, 5);
+
+    setTopClients(cleaned);
+  };
+
+  // -------------------------
+  // Top Products
+  // -------------------------
+  const calculateTopProducts = (orders: Order[]) => {
+    const map: Record<string, number> = {};
+
+    orders.forEach((order) => {
+      order.items?.forEach((item) => {
+        map[item.name] = (map[item.name] || 0) + item.qty;
+      });
+    });
+
+    const sorted = Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const results: Record<string, number> = {};
+    sorted.forEach(([name, qty]) => (results[name] = qty));
+
+    setTopProducts(results);
+  };
+ 
+
+  // -------------------------
+  // Weekly chart (last 7 days)
+  // -------------------------
+  const generateWeeklyChart = (orders: Order[]) => {
+    const now = new Date();
+    const labels: string[] = [];
+    const data: number[] = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+
+      labels.push(d.toLocaleDateString("en-US", { weekday: "short" }));
+
+      const count = orders.filter((o) => {
+        const date = o.createdAt?.toDate
+          ? o.createdAt.toDate()
+          : new Date(o.createdAt || 0);
+
+        return (
+          date.getDate() === d.getDate() &&
+          date.getMonth() === d.getMonth() &&
+          date.getFullYear() === d.getFullYear()
+        );
+      }).length;
+
+      data.push(count);
+    }
+
+    setWeeklyChartData({
+  labels,
+  datasets: [
+    {
+      label: "Orders Completed",
+      data,
+      borderColor: "#10B981",
+      backgroundColor: "rgba(16,185,129,0.1)",
+      tension: 0.3,
+    },
+  ],
+});
+
+  };
+
+  // -------------------------
+  // Logout
+  // -------------------------
+  const handleLogout = () => {
+    localStorage.clear();
+    router.push("/");
+  };
+
+  // -------------------------
+  // UI
+  // -------------------------
   return (
-    <div className="min-h-screen bg-green-50 font-sans p-8">
+    <div
+      className={
+        darkMode
+          ? "min-h-screen bg-gray-900 text-white p-8"
+          : "min-h-screen bg-green-50 p-8"
+      }
+    >
       {/* Header */}
       <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-green-700">💼 Sales Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-green-700 dark:text-green-400">
+            💼 Sales Dashboard
+          </h1>
+          <p className="text-blue-600 dark:text-blue-400 mt-1">
+            Welcome, {username}
+          </p>
+        </div>
+
         <div className="flex items-center space-x-4">
-          <span className="text-gray-500">
-  {new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })}
+          <button
+            onClick={toggleDarkMode}
+            className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded"
+          >
+            {darkMode ? "Light Mode" : "Dark Mode"}
+          </button>
+
+          <span className="text-gray-600 dark:text-gray-300">
+  {new Date()
+    .toLocaleDateString("en-US", {
+      month: "short",   // Nov
+      day: "2-digit",   // 28
+      year: "numeric",  // 2025
+    })
+    .replace(" ", ", ")}
 </span>
 
-          <div className="w-10 h-10 rounded-full bg-green-700 text-white flex items-center justify-center font-bold">S</div>
-          
+
+          <div className="w-10 h-10 rounded-full bg-green-700 text-white flex items-center justify-center">
+            {username.charAt(0).toUpperCase()}
+          </div>
         </div>
       </header>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white shadow rounded-xl p-6 hover:scale-105 transform transition">
-          <h2 className="text-sm text-gray-400">This Week's Target</h2>
-          <p className="text-2xl font-bold text-green-700">50 Orders</p>
-        </div>
-        <div className="bg-white shadow rounded-xl p-6 hover:scale-105 transform transition">
-          <h2 className="text-sm text-gray-400">Orders Completed</h2>
-          <p className="text-2xl font-bold text-green-700">43</p>
-        </div>
-        <div className="bg-white shadow rounded-xl p-6 hover:scale-105 transform transition">
-          <h2 className="text-sm text-gray-400">Pending Orders</h2>
-          <p className="text-2xl font-bold text-green-700">7</p>
-        </div>
+        {[
+          {
+            title: "This Week's Orders",
+            count: weeklyOrders,
+            revenue: revenueTotals.week,
+          },
+          {
+            title: "This Month's Orders",
+            count: monthlyOrders,
+            revenue: revenueTotals.month,
+          },
+          {
+            title: "This Year's Orders",
+            count: yearlyOrders,
+            revenue: revenueTotals.year,
+          },
+        ].map((s) => (
+          <div
+            key={s.title}
+            className="bg-white dark:bg-gray-800 shadow rounded-xl p-6"
+          >
+            <h2 className="text-sm text-gray-400 dark:text-gray-300">
+              {s.title}
+            </h2>
+            <p className="text-2xl font-bold text-green-700 dark:text-green-400">
+              {s.count} Orders
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Revenue: ${s.revenue.toFixed(2)}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {/* Orders Chart */}
-      <div className="bg-white shadow rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Daily Orders</h2>
-        <Line data={salesData} />
+      {/* Weekly Chart */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Last 7 Days Orders</h2>
+        <Line data={weeklyChartData} />
       </div>
 
       {/* Top Clients */}
-      <div className="bg-white shadow rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Top Clients</h2>
-        <ul className="space-y-3">
-          {topClients.map((client) => (
-            <li key={client.id} className="flex justify-between bg-green-50 rounded-lg p-4 shadow hover:bg-green-100 transition">
-              <span>{client.name}</span>
-              <span className="text-green-700 font-medium">{client.orders} Orders</span>
-            </li>
-          ))}
-        </ul>
+      <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Top Clients</h2>
+        {topClients.length === 0 ? (
+          <p className="text-gray-500">No clients yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {topClients.map((client) => (
+              <li
+                key={client.id}
+                className="flex justify-between bg-green-50 dark:bg-gray-700 rounded-lg p-4"
+              >
+                <span>{client.name}</span>
+                <span className="font-bold text-green-700 dark:text-green-400">
+                  {client.orders} orders
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Link href="/admin/orders" className="block">
-  <button className="w-full bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-xl shadow transition">
-    Add Order
-  </button>
-</Link>
-        <button className="bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-xl shadow transition">View Reports</button>
-        <button className="bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-xl shadow transition">Top Products</button>
-        <button className="bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-xl shadow transition">Team Performance</button>
-      <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md shadow"
-          >
-            Logout
+
+      {/* Top Products */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Top Products</h2>
+        {Object.keys(topProducts).length === 0 ? (
+          <p className="text-gray-500">No products yet.</p>
+        ) : (
+          <ul className="space-y-3">
+            {Object.entries(topProducts).map(([name, qty]) => (
+              <li
+                key={name}
+                className="flex justify-between bg-green-50 dark:bg-gray-700 rounded-lg p-4"
+              >
+                <span>{name}</span>
+                <span className="font-bold text-green-700 dark:text-green-400">
+                  {qty} sold
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <Link href="/order" className="block">
+          <button className="w-full bg-green-100 dark:bg-gray-700 py-3 rounded-xl shadow">
+            Add Order
           </button>
+        </Link>
+
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl"
+        >
+          Logout
+        </button>
       </div>
     </div>
   );

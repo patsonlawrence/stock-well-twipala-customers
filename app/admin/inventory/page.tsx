@@ -6,69 +6,100 @@ import { db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase-auth";
 import { useRouter } from "next/navigation";
-//import { roleDashboards } from "@/lib/dashboards";
-//import ProtectedRoute from "@/app/ProtectedPage";
 
-// ----- Inventory Page Content -----
-function AdminInventoryPageContent() {
+// ----- Product Type -----
+interface Product {
+  productId: string;
+  productName: string;
+  ProductPrice: number;
+  productQty: number;
+}
+
+export default function AdminInventoryPage() {
   const router = useRouter();
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState<number | string>("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productName, setProductName] = useState("");
+  const [ProductPrice, setProductPrice] = useState<number | "">("");
+  const [productQty, setProductQty] = useState<number | "">("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Load products
   const loadProducts = async () => {
-    const snap = await getDocs(collection(db, "products"));
-    const list: any[] = [];
-    snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
-    setProducts(list);
+    setLoading(true);
+    try {
+      const snap = await getDocs(collection(db, "products"));
+      const list: Product[] = snap.docs.map((d) => ({ productId: d.id, ...(d.data() as any) }));
+      setProducts(list);
+    } catch (err) {
+      console.error("Failed to load products:", err);
+      alert("Failed to load products.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     loadProducts();
   }, []);
 
-  // Add or edit product
+  // Add/Edit product
   const saveProduct = async () => {
-    try {
-      if (!name || !price) {
-        alert("Name & price required!");
-        return;
-      }
+    if (!productName.trim() || ProductPrice === "" || ProductPrice <= 0 || productQty === "" || productQty <= 0) {
+      alert("Please enter a valid name, price, and quantity.");
+      return;
+    }
 
+    setLoading(true);
+    try {
+      const data = { productName: productName.trim(), ProductPrice: Number(ProductPrice), productQty: Number(productQty) };
       if (editingId) {
-        await updateDoc(doc(db, "products", editingId), { name, price: Number(price) });
+        await updateDoc(doc(db, "products", editingId), data);
         alert("Product updated!");
       } else {
-        await addDoc(collection(db, "products"), { name, price: Number(price) });
+        await addDoc(collection(db, "products"), data);
         alert("Product added!");
       }
 
-      setName("");
-      setPrice("");
+      // Reset form
+      setProductName("");
+      setProductPrice("");
+      setProductQty("");
       setEditingId(null);
       loadProducts();
     } catch (err: any) {
       console.error("SAVE ERROR:", err);
-      alert("Error: " + err.message);
+      alert("Error saving product: " + (err.message || err));
+    } finally {
+      setLoading(false);
     }
   };
 
   // Delete product
-  const removeProduct = async (id: string) => {
-    if (!confirm("Delete this product?")) return;
-    await deleteDoc(doc(db, "products", id));
-    alert("Product deleted!");
-    loadProducts();
+  const removeProduct = async (productId: string) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, "products", productId));
+      alert("Product deleted!");
+      loadProducts();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert("Failed to delete product.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Load product into form for editing
-  const editProduct = (p: any) => {
-    setName(p.name);
-    setPrice(p.price);
-    setEditingId(p.id);
+  // Edit product
+  const editProduct = (p: Product) => {
+    setProductName(p.productName);
+    setProductPrice(p.ProductPrice);
+    setProductQty(p.productQty);
+    setEditingId(p.productId);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Logout
@@ -78,11 +109,19 @@ function AdminInventoryPageContent() {
       router.push("/");
     } catch (err: any) {
       console.error("Logout failed:", err.message);
+      alert("Logout failed");
     }
   };
 
   return (
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
+      <button
+        onClick={() => router.push("/dashboard/admindashboard")}
+        style={styles.backBtn}
+      >
+        🔙 Back to Admin
+      </button>
+
       <h2>📦 Inventory Admin</h2>
 
       {/* Add/Edit Form */}
@@ -91,52 +130,70 @@ function AdminInventoryPageContent() {
 
         <input
           placeholder="Product Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={productName}
+          onChange={(e) => setProductName(e.target.value)}
           style={styles.input}
+          disabled={loading}
         />
 
         <input
           placeholder="Price (UGX)"
           type="number"
-          value={price}
-          onChange={(e) => setPrice(e.target.value)}
+          value={ProductPrice}
+          onChange={(e) => setProductPrice(Number(e.target.value))}
           style={styles.input}
+          disabled={loading}
+        />
+        <input
+          placeholder="Quantity"
+          type="number"
+          value={productQty}
+          onChange={(e) => setProductQty(Number(e.target.value))}
+          style={styles.input}
+          disabled={loading}
         />
 
-        <button onClick={saveProduct} style={styles.saveBtn}>
+        <button onClick={saveProduct} style={styles.saveBtn} disabled={loading}>
           {editingId ? "Update Product" : "Add Product"}
         </button>
 
         {editingId && (
           <button
             onClick={() => {
-              setName("");
-              setPrice("");
+              setProductName("");
+              setProductPrice("");
+              setProductQty("");
               setEditingId(null);
             }}
             style={styles.cancelBtn}
+            disabled={loading}
           >
             Cancel Edit
           </button>
         )}
       </div>
 
-      {/* Current Inventory */}
+      {/* Inventory List */}
       <h3 style={{ marginTop: "30px" }}>📋 Current Inventory</h3>
+
+      {loading && <p>Loading products...</p>}
+      {!loading && products.length === 0 && <p>No products yet.</p>}
+
       {products.map((p) => (
-        <div key={p.id} style={styles.itemRow}>
+        <div key={p.productId} style={styles.itemRow}>
           <div>
-            <strong>{p.name}</strong>
+            <strong>{p.productName}</strong>
             <br />
-            {p.price.toLocaleString()} UGX
+            {p.ProductPrice.toLocaleString()} UGX
+            <br />
+            {p.productQty} in stock
           </div>
 
           <div>
-            <button onClick={() => editProduct(p)} style={styles.editBtn}>
+            <button onClick={() => editProduct(p)} style={styles.editBtn} disabled={loading}>
               Edit
             </button>
-            <button onClick={() => removeProduct(p.id)} style={styles.deleteBtn}>
+            <button onClick={() => removeProduct(p.productId)} style={styles.deleteBtn} disabled={loading}>
               Delete
             </button>
           </div>
@@ -144,27 +201,25 @@ function AdminInventoryPageContent() {
       ))}
 
       {/* Floating Logout Button */}
-      <button
-        onClick={handleLogout}
-        style={{
-          position: "fixed",
-          bottom: "20px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          backgroundColor: "white",
-          color: "green",
-          padding: "0.75rem 1.5rem",
-          border: "none",
-          borderRadius: "1.75rem",
-          cursor: "pointer",
-          fontWeight: 500,
-          fontSize: "1rem",
-          width: "75%",
-          zIndex: 1000,
-          textAlign: "center",
-          boxShadow: "0px 2px 8px rgba(0,0,0,0.2)",
-        }}
-      >
+      <button onClick={handleLogout} style={{
+  position: "fixed" as const,   // cast to literal type
+  bottom: "20px",
+  left: "50%",
+  transform: "translateX(-50%)",
+  backgroundColor: "white",
+  color: "green",
+  padding: "0.75rem 1.5rem",
+  border: "none",
+  borderRadius: "1.75rem",
+  cursor: "pointer",
+  fontWeight: 500,
+  fontSize: "1rem",
+  width: "75%",
+  zIndex: 1000,                  // zIndex should be a number, not string
+  textAlign: "center",
+  boxShadow: "0px 2px 8px rgba(0,0,0,0.2)",
+}}
+>
         Logout
       </button>
     </div>
@@ -180,11 +235,23 @@ const styles = {
   itemRow: { display: "flex", justifyContent: "space-between", background: "#eee", padding: "12px", borderRadius: "8px", marginBottom: "10px" },
   editBtn: { padding: "8px 12px", marginRight: "6px", background: "#007bff", color: "white", borderRadius: "6px", border: "none", cursor: "pointer" },
   deleteBtn: { padding: "8px 12px", background: "red", color: "white", borderRadius: "6px", border: "none", cursor: "pointer" },
+  backBtn: { marginBottom: 20, padding: "8px 12px", backgroundColor: "gray", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" },
+  logoutBtn: {
+    position: "fixed",
+    bottom: "20px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    backgroundColor: "white",
+    color: "green",
+    padding: "0.75rem 1.5rem",
+    border: "none",
+    borderRadius: "1.75rem",
+    cursor: "pointer",
+    fontWeight: 500,
+    fontSize: "1rem",
+    width: "75%",
+    zIndex: 1000,
+    textAlign: "center",
+    boxShadow: "0px 2px 8px rgba(0,0,0,0.2)",
+  },
 };
-
-// ----- Export Wrapped with ProtectedRoute -----
-export default function AdminInventoryPage() {
-  return (
-          <AdminInventoryPageContent />    
-  );
-}

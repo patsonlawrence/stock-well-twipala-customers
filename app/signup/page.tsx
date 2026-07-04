@@ -1,7 +1,14 @@
 
-'use client'
+'use client';
+
 import Head from 'next/head';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+
+import { auth, db } from '@/lib/firebase';
 // app/signup/page.tsx
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -31,39 +38,73 @@ export default function Signup() {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
 
   if (!formData.agree) {
-    alert('You must agree to the terms.');
+    alert("You must agree to the Terms and Conditions.");
     return;
   }
 
-  // 🔄 Get existing users from localStorage
-  const existingUsers = JSON.parse(localStorage.getItem('userProfiles') || '[]');
+  try {
+    // Create Firebase Authentication account
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      formData.email.trim().toLowerCase(),
+      formData.password
+    );
 
-  // 🔍 Check if email or phone already exists
-  const userExists = existingUsers.some((user: any) =>
-    user.email.toLowerCase() === formData.email.toLowerCase() ||
-    user.phone === formData.phone
-  );
+    // Save additional profile information
+    await setDoc(doc(db, "users", userCredential.user.uid), {
+      fullName: formData.fullName,
+      phone: formData.phone,
+      email: formData.email.trim().toLowerCase(),
+      gender: formData.gender,
+      tin: formData.tin,
+      nextKinName: formData.nextKinName,
+      nextKinPhone: formData.nextKinPhone,
+      regDate: formData.regDate,
+      createdAt: serverTimestamp(),
+    });
 
-  if (userExists) {
-    alert('User with this email or phone number already exists.');
-    window.location.href = '/login';
-    return;
+    alert("Account created successfully!");
+
+    setFormData({
+      fullName: "",
+      phone: "",
+      email: "",
+      password: "",
+      regDate: new Date().toISOString().split("T")[0],
+      gender: "",
+      tin: "",
+      nextKinName: "",
+      nextKinPhone: "",
+      agree: false,
+    });
+
+    router.push("/login");
+  } catch (error: any) {
+    console.error(error);
+
+    switch (error.code) {
+      case "auth/email-already-in-use":
+        alert("An account with this email already exists.");
+        break;
+
+      case "auth/weak-password":
+        alert("Password must be at least 6 characters.");
+        break;
+
+      case "auth/invalid-email":
+        alert("Please enter a valid email.");
+        break;
+
+      default:
+        alert(error.message);
+    }
   }
-
-  // ✅ Save the new user to the array
-  const updatedUsers = [...existingUsers, {
-    ...formData,
-    email: formData.email.toLowerCase().trim(),
-  }];
-  localStorage.setItem('userProfiles', JSON.stringify(updatedUsers));
-
-  alert('Signup successful!');
-  console.log('Saved user:', formData);
 
   // 🔄 Reset form
   setFormData({
@@ -103,7 +144,7 @@ export default function Signup() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} className="w-full p-2 border rounded" required />
             <input type="tel" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} className="w-full p-2 border rounded" required />
-            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full p-2 border rounded" />
+            <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full p-2 border rounded" required />
             <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full p-2 border rounded" required />
             <input type="date" name="regDate" value={formData.regDate} readOnly  className="w-full p-2 border rounded bg-gray-100 text-gray-600 cursor-not-allowed"></input>
             <select name="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 border rounded" required>
@@ -119,7 +160,9 @@ export default function Signup() {
               <input type="checkbox" name="agree" checked={formData.agree} onChange={handleChange} className="mr-2" required />
               I agree to the T&Cs and Privacy Policy
             </label>
-            <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-green-700 transition">Sign Up</button>
+            <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
+              Sign Up
+            </button>
           </form>
           <p className="text-center text-sm text-green-600 mt-4">
             Already have an account? <a href="/login" className="text-blue-500">Log in</a>
@@ -130,3 +173,4 @@ export default function Signup() {
     </>
   );
 }
+

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="55d5d630-ddec-4019-85ad-4d2beb04312b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/app/admin/inventory/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/admin/inventory/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/adminlogin/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/adminlogin/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/dashboard/admindashboard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/admindashboard/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/dashboard/salesdashboard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/salesdashboard/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/order/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/order/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/firebase-auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/firebase-auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/firebase.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/firebase.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 5
+}]]></component>
+  <component name="ProjectId" id="39T8FvFhyMMQ9bApM5ArX8NUTv8" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "E:/stockwell/stockwellTwipala"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="55d5d630-ddec-4019-85ad-4d2beb04312b" name="Changes" comment="" />
+      <created>1770708612624</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1770708612624</updated>
+    </task>
+    <servers />
+  </component>
+</project>
