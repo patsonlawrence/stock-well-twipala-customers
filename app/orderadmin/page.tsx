@@ -91,6 +91,14 @@ export default function AdminOrderPage() {
   }, []);
 
   // --- ITEMS HANDLERS ---
+  const [orderSearch, setOrderSearch] = useState("");
+  const pendingOrders = orders.filter((o) => !o.resolved).length;
+
+const resolvedOrders = orders.filter((o) => o.resolved).length;
+
+const totalRevenue = orders
+  .filter((o) => o.resolved)
+  .reduce((sum, o) => sum + (o.orderTotal || 0), 0);
   const addItem = () => setOrderedItems([...orderedItems, { productId: "", productName: "", productQty: 1, ProductPrice: 0 }]);
   const removeItem = (index: number) => setOrderedItems(orderedItems.filter((_, i) => i !== index));
   const updateItem = (index: number, field: "productName" | "productQty" | "ProductPrice", value: any) => {
@@ -120,11 +128,23 @@ export default function AdminOrderPage() {
 
   // --- FILTERS ---
   const filteredOrders = orders.filter((o) => {
-    const customerMatch = o.customer.toLowerCase().includes(searchCustomer.toLowerCase());
-    const statusMatch =
-      statusFilter === "all" ? true : statusFilter === "resolved" ? o.resolved : !o.resolved;
-    return customerMatch && statusMatch;
-  });
+
+  const customerMatch =
+    o.customer
+      .toLowerCase()
+      .includes(orderSearch.toLowerCase());
+
+  const statusMatch =
+    statusFilter === "all"
+      ? true
+      : statusFilter === "resolved"
+      ? o.resolved
+      : !o.resolved;
+
+
+  return customerMatch && statusMatch;
+
+});
 
   const monthlyTotal = filteredOrders.reduce((sum, o) => sum + (o.orderTotal || 0), 0);
 
@@ -243,12 +263,7 @@ transaction.update(productRef, {
     await loadOrders();
   } catch (error) {
     console.error("Toggle resolved failed:", error);
-
-  if (error instanceof Error) {
-    alert(error.message);
-  } else {
     alert("Failed to update order. Please try again.");
-  }
   }
 };
 
@@ -296,10 +311,95 @@ transaction.update(productRef, {
 
   // --- UI ---
   return (
-    <div style={{ padding: 20, maxWidth: 900, margin: "0 auto" }}>
-      <h2>🛒 {editingId ? "Edit Order" : "Create New Order"}</h2>
+<div className="min-h-screen bg-slate-100">
 
-      <select value={customer} onChange={(e) => setCustomer(e.target.value)} style={styles.input}>
+    {/* HEADER */}
+
+    <header className="bg-white border-b shadow-sm">
+
+        <div className="max-w-7xl mx-auto px-8 py-6 flex justify-between items-center">
+            <div>
+                <h1 className="text-3xl font-bold text-slate-800">
+                    Order Management
+                </h1>
+                <p className="text-slate-500 mt-1">
+                    Create, track and resolve customer orders
+                </p>
+            </div>
+
+            <div className="flex gap-3">
+
+                <Link
+                    href="/dashboard/admindashboard"
+                    className="px-5 py-2 rounded-lg bg-slate-700 hover:bg-slate-800 text-white transition"
+                >
+                    Dashboard
+                </Link>
+                <Link
+                    href="/dashboard/admininventory"
+                    className="px-5 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition"
+                >
+                    Inventory
+                </Link>
+            </div>
+        </div>
+    </header>    
+
+    <main className="max-w-7xl mx-auto px-8 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-2xl shadow p-6">
+          <p className="text-slate-500">Total Orders</p>
+            <h2 className="text-4xl font-bold mt-2">
+            {orders.length}
+            </h2>
+        </div>
+            <div className="bg-white rounded-2xl shadow p-6">
+            <p className="text-slate-500">Pending Orders</p>  
+            <h2 className="text-4xl font-bold text-orange-500 mt-2">{pendingOrders}</h2>
+            </div>
+            <div className="bg-white rounded-2xl shadow p-6">
+            <p className="text-slate-500">Resolved Orders</p>          
+            <h2 className="text-4xl font-bold text-green-600 mt-2">{resolvedOrders}</h2>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow p-6">
+        <p className="text-slate-500">
+            Revenue
+        </p>
+        <h2 className="text-3xl font-bold text-green-700 mt-2">
+            UGX {totalRevenue.toLocaleString()}
+        </h2>
+      </div>
+
+</div>
+<div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+      <div className="mb-8">
+          <h2 className="text-3xl font-bold text-slate-800">
+              {editingId ? "Edit Order" : "Create New Order"}
+          </h2>
+          <p className="text-slate-500 mt-2">
+            Create customer orders and manage inventory allocation.
+          </p>
+      </div>
+      <label className="block text-sm font-semibold text-slate-700 mb-2">
+        Customer Outlet
+      </label>
+
+    <select
+    value={customer}
+    onChange={(e) => setCustomer(e.target.value)}
+    className="
+flex-1
+rounded-xl
+border
+border-slate-300
+px-4
+py-3
+outline-none
+focus:ring-2
+focus:ring-green-500
+    "
+>
         <option value="">Select Outlet...</option>
         {customersList.map((c, idx) => (
           <option key={idx} value={c}>
@@ -308,12 +408,32 @@ transaction.update(productRef, {
         ))}
       </select>
 
-      <input
-        style={styles.input}
-        placeholder="Order Number"
-        value={orderNumber}
-        onChange={(e) => setOrderNumber(e.target.value)}
-      />
+      <label className="block text-sm font-semibold text-slate-700 mb-2">
+    Order Number
+</label>
+
+<input
+
+placeholder="Example: ORD-001"
+
+value={orderNumber}
+
+onChange={(e)=>setOrderNumber(e.target.value)}
+
+className="
+w-full
+rounded-xl
+border
+border-slate-300
+px-4
+py-3
+mb-5
+outline-none
+focus:ring-2
+focus:ring-green-500
+"
+
+/>
 
       <input
         style={styles.input}
@@ -323,7 +443,20 @@ transaction.update(productRef, {
       />
 
       {orderedItems.map((it, idx) => (
-        <div key={idx} style={styles.row}>
+
+<div
+key={idx}
+className="
+flex
+gap-3
+items-center
+bg-slate-50
+p-4
+rounded-xl
+mb-3
+border
+"
+>
           <select
             style={styles.input}
             value={it.productName}
@@ -334,104 +467,477 @@ transaction.update(productRef, {
               .filter((p) => p.productName.toLowerCase().includes(searchItem.toLowerCase()))
               .map((p) => (
                 <option key={p.productId} value={p.productName}>
-                  {p.productName} - {p.productName} - {(Number(p.ProductPrice) || 0).toLocaleString()} UGX {p.productQty > 0 ? "(In stock)" : "(Out of stock)"}
-                </option>
+    {p.productName} - 
+    {(Number(p.ProductPrice) || 0).toLocaleString()} UGX
+    {p.productQty > 0 ? " (In stock)" : " (Out of stock)"}
+</option>
               ))}
           </select>
           <input
             type="number"
             min={1}
-            style={{ ...styles.input, width: 80 }}
+            className="
+w-24
+rounded-xl
+border
+border-slate-300
+px-3
+py-3
+text-center
+"
             value={it.productQty}
             onChange={(e) => updateItem(idx, "productQty", Number(e.target.value))}
           />
-          <button style={styles.removeBtn} onClick={() => removeItem(idx)}>
+          <button
+
+className="
+bg-red-500
+hover:bg-red-600
+text-white
+rounded-xl
+px-4
+py-3
+transition
+"
+ onClick={() => removeItem(idx)}>
             ✖
           </button>
         </div>
+        
       ))}
 
-      <button style={styles.addBtn} onClick={addItem}>
+      <button
+
+onClick={addItem}
+
+className="
+w-full
+bg-blue-600
+hover:bg-blue-700
+text-white
+font-semibold
+py-3
+rounded-xl
+transition
+mb-6
+"
+
+>
         ➕ Add Item
       </button>
 
-      <h3>Total: {orderTotal.toLocaleString()} UGX</h3>
+      <div className="
+bg-green-50
+border
+border-green-200
+rounded-xl
+p-5
+mb-5
+">
 
-      <button style={styles.submitBtn} onClick={handleSubmit}>
+<p className="text-slate-500">
+Order Total
+</p>
+
+<h3 className="
+text-3xl
+font-bold
+text-green-700
+">
+
+UGX {orderTotal.toLocaleString()}
+
+</h3>
+
+</div>
+
+      <button
+
+onClick={handleSubmit}
+
+className="
+w-full
+bg-green-600
+hover:bg-green-700
+text-white
+font-bold
+py-4
+rounded-xl
+transition
+"
+
+>
         {editingId ? "Update Order" : "Save Order"}
       </button>
 
-      <div style={{ margin: "20px 0", display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <input
-          placeholder="Search customer..."
-          value={searchCustomer}
-          onChange={(e) => setSearchCustomer(e.target.value)}
-          style={{ ...styles.input, flex: 1 }}
-        />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)}>
-          <option value="all">All</option>
-          <option value="pending">Pending</option>
-          <option value="resolved">Resolved</option>
-        </select>
-        <button style={styles.exportBtn} onClick={exportCSV}>
-          Export CSV
-        </button>
-      </div>
+      <div className="
+bg-white
+rounded-2xl
+shadow
+border
+p-6
+mb-6
+">
+</div>
+
+<div className="
+flex
+flex-col
+md:flex-row
+gap-4
+justify-between
+items-center
+">
+
+
+<input
+
+placeholder="Search customer..."
+
+value={orderSearch}
+
+onChange={(e)=>setOrderSearch(e.target.value)}
+
+className="
+w-full
+md:w-80
+rounded-xl
+border
+px-4
+py-3
+outline-none
+focus:ring-2
+focus:ring-green-500
+"
+
+/>
+
+
+<select
+
+value={statusFilter}
+
+onChange={(e)=>setStatusFilter(e.target.value as any)}
+
+className="
+rounded-xl
+border
+px-4
+py-3
+"
+
+>
+
+<option value="all">
+All Orders
+</option>
+
+<option value="pending">
+Pending
+</option>
+
+<option value="resolved">
+Resolved
+</option>
+
+</select>
+
+
+<button
+
+onClick={exportCSV}
+
+className="
+bg-green-600
+hover:bg-green-700
+text-white
+px-5
+py-3
+rounded-xl
+transition
+"
+
+>
+
+Export CSV
+
+</button>
+
+
+</div>
+
+
+</div>
 
       <h3>💰 Total of displayed orders: {monthlyTotal.toLocaleString()} UGX</h3>
 
       {loading && <p>Loading...</p>}
-      {filteredOrders.map((o) => {
-        const createdAt = o.createdAt?.toDate?.()?.toLocaleString() || "N/A";
-        return (
-          <div
-            key={o.OrderId}
-            style={{ ...styles.card, background: o.resolved ? "#e6fffa" : "#f3f3f3" }}
-          >
-            <div style={styles.header}>
-              <strong>{o.customer}</strong>
-              <span>#{o.orderNumber}</span>
-            </div>
-            <p>Total: {o.orderTotal?.toLocaleString()} UGX</p>
-            <p>Status: {o.resolved ? "✅ Resolved" : "⏳ Pending"}</p>
-            <p>Ordered By: {o.orderedBy}</p>
-            <p>Date: {createdAt}</p>
-            <details>
-              <summary>Items</summary>
-              <ul>
-                {o.orderedItems.map((i, idx) => (
-                  <li key={idx}>
-                    {i.productName} × {i.productQty} = {(i.productQty * i.ProductPrice).toLocaleString()} UGX
-                  </li>
-                ))}
-              </ul>
-            </details>
-            <div style={styles.actions}>
-              <button
-                style={{ ...styles.btn, background: o.resolved ? "#999" : "green" }}
-                onClick={() => toggleResolved(o)}
-              >
-                {o.resolved ? "Unresolve" : "Resolve"}
-              </button>
-              <button style={{ ...styles.btn, background: "blue" }} onClick={() => editOrder(o)}>
-                Edit
-              </button>
-              <button style={{ ...styles.btn, background: "red" }} onClick={() => deleteOrder(o.OrderId)}>
-                Delete
-              </button>
-              <button style={{ ...styles.btn, background: "darkgreen" }} onClick={() => sendToWhatsApp(o)}>
-                📲 WhatsApp
-              </button>
-            </div>
-          </div>
-        );
-      })}
+      <div
+className="
+bg-white
+rounded-2xl
+shadow
+border
+overflow-hidden
+"
+>
+            <div className="
+bg-white
+rounded-2xl
+shadow
+border
+overflow-hidden
+">
 
+
+<table className="w-full">
+
+<thead className="bg-slate-50">
+
+<tr>
+
+<th className="p-4 text-left">
+#
+</th>
+
+<th className="p-4 text-left">
+Customer
+</th>
+
+<th className="p-4 text-left">
+Order No
+</th>
+
+<th className="p-4 text-right">
+Total
+</th>
+
+<th className="p-4 text-center">
+Status
+</th>
+
+<th className="p-4 text-left">
+Date
+</th>
+
+<th className="p-4 text-center">
+Actions
+</th>
+
+</tr>
+
+</thead>
+
+
+<tbody>
+
+
+{filteredOrders.map((o,index)=>{
+
+
+const createdAt =
+o.createdAt?.toDate?.()?.toLocaleDateString()
+|| "N/A";
+
+
+return (
+
+<tr
+
+key={o.OrderId}
+
+className="
+border-t
+hover:bg-slate-50
+transition
+"
+
+
+>
+
+
+<td className="p-4">
+{index+1}
+</td>
+
+
+<td className="p-4 font-semibold">
+
+{o.customer}
+
+</td>
+
+
+<td className="p-4">
+
+#{o.orderNumber}
+
+</td>
+
+
+<td className="p-4 text-right font-semibold">
+
+UGX {o.orderTotal?.toLocaleString()}
+
+</td>
+
+
+<td className="p-4 text-center">
+
+
+{o.resolved ? (
+
+<span className="
+bg-green-100
+text-green-700
+px-3
+py-1
+rounded-full
+text-sm
+font-semibold
+">
+
+Resolved
+
+</span>
+
+):(
+
+
+<span className="
+bg-orange-100
+text-orange-700
+px-3
+py-1
+rounded-full
+text-sm
+font-semibold
+">
+
+Pending
+
+</span>
+
+
+)}
+
+
+</td>
+
+
+<td className="p-4">
+
+{createdAt}
+
+</td>
+
+
+
+<td className="p-4">
+
+
+<div className="
+flex
+justify-center
+gap-2
+">
+
+
+<button
+
+onClick={()=>toggleResolved(o)}
+
+className="
+bg-green-600
+hover:bg-green-700
+text-white
+px-3
+py-2
+rounded-lg
+"
+
+>
+
+✓
+
+</button>
+
+
+
+<button
+
+onClick={()=>editOrder(o)}
+
+className="
+bg-blue-600
+hover:bg-blue-700
+text-white
+px-3
+py-2
+rounded-lg
+"
+
+>
+
+✏
+
+</button>
+
+
+
+<button
+
+onClick={()=>deleteOrder(o.OrderId)}
+
+className="
+bg-red-600
+hover:bg-red-700
+text-white
+px-3
+py-2
+rounded-lg
+"
+
+>
+
+🗑
+
+</button>
+
+<button
+onClick={()=>sendToWhatsApp(o)}
+className="
+bg-green-800
+hover:bg-green-900
+text-white
+px-3
+py-2
+rounded-lg
+"
+
+>
+
+📲
+
+</button>
+</div>
+</td>
+</tr>
+)
+})}
+
+</tbody>
+</table>
+</div>
       <Link href="/dashboard/admindashboard" style={styles.backBtn}>
         Back to Dashboard
       </Link>
-    </div>
-  );
+        </div>     
+        
+        
+</main>
+</div>
+);
 }
 
 const styles: any = {
