@@ -314,7 +314,7 @@ transaction.update(productRef, {
 
   // --- UI ---
   return (
-    <ProtectedRoute allowedRoles={["admin","superuser"]}>
+    <ProtectedRoute allowedRoles={["admin","superuser","manager"]}>
 <div className="min-h-screen bg-slate-100">
 
     {/* HEADER */}
