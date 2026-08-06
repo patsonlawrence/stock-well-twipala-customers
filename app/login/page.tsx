@@ -49,6 +49,7 @@ async function getUserProfile(uid: string): Promise<UserProfile | null> {
     ...(userDoc.data() as Omit<UserProfile, "id">),
   };
 }
+console.log(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
 
 function getDashboardRoute(role: string): string {
   

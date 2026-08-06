@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase-auth";
 import { useRouter } from "next/navigation";
-
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 // ----- Product Type -----
 interface Product {
   productId: string;
@@ -157,6 +157,7 @@ const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   }; 
 
   return (
+    <ProtectedRoute allowedRoles={["admin","superuser"]}>
 <div className="min-h-screen bg-slate-100">
 
     {/* Header */}
@@ -488,7 +489,7 @@ const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   onClick={() => handleSort("ProductPrice")}
   className="cursor-pointer p-4 text-right hover:text-green-600"
 >
-  Price
+  Name
   {sortField === "ProductPrice" &&
     (sortDirection === "asc" ? " ▲" : " ▼")}
 </th>
@@ -497,7 +498,7 @@ const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   onClick={() => handleSort("productQty")}
   className="cursor-pointer p-4 text-right hover:text-green-600"
 >
-  Qty
+  Price
   {sortField === "productQty" &&
     (sortDirection === "asc" ? " ▲" : " ▼")}
 </th>
@@ -664,6 +665,7 @@ UGX {filteredProducts
     </main>
 
 </div>
+</ProtectedRoute>
 );
 }
 

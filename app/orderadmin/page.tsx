@@ -16,6 +16,8 @@ import { db } from "@/lib/firebase";
 import Link from "next/link";
 import { runTransaction } from "firebase/firestore";
 
+import ProtectedRoute from "@/app/components/ProtectedRoute";
+
 type Item = { productId: string; productName: string; productQty: number; ProductPrice: number };
 
 type Order = {
@@ -30,6 +32,7 @@ type Order = {
 };
 
 export default function AdminOrderPage() {
+
   // --- STATES ---
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -311,6 +314,7 @@ transaction.update(productRef, {
 
   // --- UI ---
   return (
+    <ProtectedRoute allowedRoles={["admin","superuser"]}>
 <div className="min-h-screen bg-slate-100">
 
     {/* HEADER */}
@@ -937,6 +941,7 @@ rounded-lg
         
 </main>
 </div>
+</ProtectedRoute>
 );
 }
 

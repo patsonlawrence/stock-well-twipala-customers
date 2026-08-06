@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Line } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
-
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function SuperuserDashboard() {
@@ -27,6 +27,7 @@ export default function SuperuserDashboard() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={["admin","superuser"]}>
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white font-sans">
       {/* Header */}
       <header className="p-8 flex justify-between items-center">
@@ -85,5 +86,6 @@ export default function SuperuserDashboard() {
         © 2025 Superuser Dashboard. All rights reserved.
       </footer>
     </div>
+    </ProtectedRoute>
   );
 }
