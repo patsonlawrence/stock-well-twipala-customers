@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import router from "next/navigation";
 
 export default function ManagerDashboard() {
   const [tasks, setTasks] = useState([
@@ -8,6 +12,18 @@ export default function ManagerDashboard() {
     { id: 2, title: "Review Inventory Report", completed: true },
     { id: 3, title: "Team Meeting at 3 PM", completed: false },
   ]);
+  const handleLogout = async () => {
+  try {
+    await signOut(auth);
+
+    localStorage.clear();
+
+    window.location.href = "/login";
+  } catch (error) {
+    console.error(error);
+    alert("Logout failed.");
+  }
+};
 
   const toggleTask = (id: number) => {
     setTasks((prev) =>
@@ -18,10 +34,23 @@ export default function ManagerDashboard() {
   return (
     <div className="p-8 bg-gradient-to-b from-purple-50 to-white min-h-screen font-sans">
       {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-purple-700 mb-2">👋 Welcome, Manager!</h1>
-        <p className="text-purple-400">Here's what's happening today.</p>
-      </header>
+      <header className="mb-8 flex items-center justify-between">
+  <div>
+    <h1 className="text-3xl font-bold text-purple-700 mb-2">
+      👋 Welcome, Manager!
+    </h1>
+    <p className="text-purple-400">
+      Here's what's happening today.
+    </p>
+  </div>
+
+  <button
+    onClick={handleLogout}
+    className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg shadow"
+  >
+    Logout
+  </button>
+</header>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
@@ -73,7 +102,7 @@ export default function ManagerDashboard() {
           <a href="/admin/inventory" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
             Inventory
           </a>
-          <a href="/order" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
+          <a href="/orderadmin" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
             Orders
           </a>
           <a href="/reports" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">

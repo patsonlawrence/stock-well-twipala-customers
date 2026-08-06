@@ -23,7 +23,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
-
+import ProtectedRoute from "@/app/components/ProtectedRoute";
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState("");
@@ -57,6 +57,7 @@ export default function AdminDashboard() {
   };
 
   return (
+    <ProtectedRoute allowedRoles={["admin","superuser"]}>
     <div className="min-h-screen bg-gray-100 font-sans md:flex">
       {/* Sidebar */}
       <aside
@@ -149,5 +150,6 @@ export default function AdminDashboard() {
         </div>
       </main>
     </div>
+    </ProtectedRoute>
   );
 }

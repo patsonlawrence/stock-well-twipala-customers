@@ -1,12 +1,84 @@
 'use client';
 
-import Head from 'next/head';
-import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase'; // Adjust this path if needed
+import {
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+} from "firebase/auth";
+
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+
+import { FirebaseError } from "firebase/app";
+
+import { auth, db } from "@/lib/firebase";
+import Head from "next/head";
+import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+
+interface UserProfile {
+  id: string;
+  role: string;
+  username?: string;
+  email?: string;
+}
+
+async function getUserProfile(uid: string): Promise<UserProfile | null> {
+  const usersRef = collection(db, "users");
+
+  const q = query(usersRef, where("uid", "==", uid));
+
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const userDoc = snapshot.docs[0];
+
+  return {
+    id: userDoc.id,
+    ...(userDoc.data() as Omit<UserProfile, "id">),
+  };
+}
+
+function getDashboardRoute(role: string): string {
+  
+  switch (role.trim().toLowerCase()) {
+    case "admin":
+      return "/dashboard/admindashboard";
+
+    case "superuser":
+      return "/dashboard/superuserdashboard";
+
+    case "manager":
+      return "/dashboard/managerdashboard";
+
+    case "supervisor":
+      return "/dashboard/supervisordashboard";
+
+    case "sales":
+      return "/dashboard/salesdashboard";
+
+    case "customer":
+    return "/dashboard/customerdashboard";
+
+    default:
+      return "/";
+
+  }
+}
 
 export default function Login() {
+  
   const router = useRouter();
 
   const [input, setInput] = useState({
@@ -17,84 +89,120 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const { id, value, checked, type } = e.target;
+
+  setInput((prev) => ({
+    ...prev,
+    [id]: type === "checkbox" ? checked : value,
+  }));
+};
+
   // Redirect if already logged in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.push('/dashboard');
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value, type, checked } = e.target;
-
-    setInput((prev) => ({
-      ...prev,
-      [id]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    setLoading(true);
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
 
     try {
-      await signInWithEmailAndPassword(
-    auth,
-    input.email.trim().toLowerCase(),
-    input.password
+      
+      const profile = await getUserProfile(user.uid);
+      console.log("Searching for UID:", user.uid);
+
+if (!profile) {
+  alert("Your account profile was not found. Please contact the administrator.");
+  return;
+}
+
+if (!profile.role) {
+  alert("Your account has no assigned role.");
+  return;
+}
+
+router.replace(getDashboardRoute(profile.role));
+    } catch (error) {
+      console.error(error);
+      router.replace("/");
+    }
+  });
+
+  return unsubscribe;
+}, [router]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();    
+
+    setLoading(true);
+    try {
+      await setPersistence(
+  auth,
+  input.remember
+    ? browserLocalPersistence
+    : browserSessionPersistence
 );
 
-      alert('Login successful!');
-      router.push('/dashboard');
-    } catch (error: any) {
-      console.error(error);
+      const credential = await signInWithEmailAndPassword(
+  auth,
+  input.email.trim().toLowerCase(),
+  input.password
+);
 
-      switch (error.code) {
-        case 'auth/invalid-credential':
-          alert('Incorrect email or password.');
-          break;
+const profile = await getUserProfile(credential.user.uid);
 
-        case 'auth/user-not-found':
-          alert('No account found with this email.');
-          break;
+if (!profile) {
+  alert("Your account profile was not found.");
+  return;
+}
 
-        case 'auth/wrong-password':
-          alert('Incorrect password.');
-          break;
+if (!profile.role) {
+  alert("Your account has no assigned role.");
+  return;
+}
 
-        case 'auth/invalid-email':
-          alert('Please enter a valid email address.');
-          break;
+router.replace(getDashboardRoute(profile.role));
+    } catch (error) {
+  const err = error as FirebaseError;
 
-        default:
-          alert(error.message);
-      }
-    } finally {
-      setLoading(false);
-    }
+  switch (err.code) {
+  case "auth/invalid-credential":
+    alert("Incorrect email or password.");
+    break;
+
+  case "auth/user-disabled":
+    alert("This account has been disabled.");
+    break;
+
+  case "auth/too-many-requests":
+    alert("Too many failed attempts. Try again later.");
+    break;
+
+  case "auth/network-request-failed":
+    alert("Network error. Check your internet connection.");
+    break;
+
+  default:
+    alert(err.message);
+}
+   }finally {
+  setLoading(false);
+}
   };
 
   return (
     <>
       <Head>
-        <title>Twipala Login</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Twipala Login</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
 
       <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
         <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-md">
 
-          <img
-            src="/icons/twipalalogo.PNG"
-            alt="Twipala Logo"
-            width={100}
-            height={100}
-            className="mx-auto mb-4 rounded-full object-cover"
+          <Image
+          src="/icons/twipalalogo.PNG"
+          alt="Twipala Logo"
+          width={100}
+          height={100}
+          className="mx-auto mb-4 rounded-full object-cover"
           />
 
           <h2 className="text-2xl font-bold text-center mb-6">
@@ -164,9 +272,9 @@ export default function Login() {
 
           <p className="text-center text-sm text-gray-600 mt-4">
             Don't have an account?{' '}
-            <a href="/signup" className="text-blue-500">
+            <Link href="/signup" className="text-blue-500">
               Sign up
-            </a>
+            </Link>
           </p>
 
           <button
