@@ -18,6 +18,7 @@ import Link from "next/link";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
+import { orderBy } from "firebase/firestore";
 
 ChartJS.register(
   CategoryScale,
@@ -65,6 +66,12 @@ interface ChartDataType {
     tension: number;
   }[];
 }
+interface Product {
+  id: string;
+  productName: string;
+  productQty: number;
+  ProductPrice: number;
+}
 
 
 export default function SalesDashboard() {
@@ -91,18 +98,11 @@ export default function SalesDashboard() {
   const [topClients, setTopClients] = useState<Client[]>([]);
   const [topProducts, setTopProducts] = useState<Record<string, number>>({});
 
-  const [weeklyChartData, setWeeklyChartData] = useState<ChartDataType>({
-  labels: [],
-  datasets: [
-    {
-      label: "Orders Completed",
-      data: [],
-      borderColor: "#10B981",
-      backgroundColor: "rgba(16,185,129,0.1)",
-      tension: 0.3,
-    },
-  ],
-});
+  
+const [products, setProducts] = useState<Product[]>([]);
+const productsRef = collection(db, "products");
+
+
 
 
   // -------------------------
@@ -123,6 +123,19 @@ export default function SalesDashboard() {
   // Firestore real-time listener
   // -------------------------
   useEffect(() => {
+const productsQuery = query(
+  collection(db, "products"),
+  orderBy("productName", "asc")
+);
+const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+  const productData = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Product[];
+
+  setProducts(productData);
+});
+
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
       if (!user) return;
 
@@ -137,11 +150,10 @@ export default function SalesDashboard() {
 
         calculateStats(orders);
         calculateTopClients(orders);
-        calculateTopProducts(orders);
-        generateWeeklyChart(orders);
+        calculateTopProducts(orders);        
       });
 
-      return () => unsubscribe();
+      return () => unsubscribe(); unsubscribeProducts();
     });
 
     return () => unsubscribeAuth();
@@ -242,53 +254,12 @@ export default function SalesDashboard() {
   };
  
 
-  // -------------------------
-  // Weekly chart (last 7 days)
-  // -------------------------
-  const generateWeeklyChart = (orders: Order[]) => {
-    const now = new Date();
-    const labels: string[] = [];
-    const data: number[] = [];
-
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
-
-      labels.push(d.toLocaleDateString("en-US", { weekday: "short" }));
-
-      const count = orders.filter((o) => {
-        const date = o.createdAt?.toDate
-          ? o.createdAt.toDate()
-          : new Date(o.createdAt || 0);
-
-        return (
-          date.getDate() === d.getDate() &&
-          date.getMonth() === d.getMonth() &&
-          date.getFullYear() === d.getFullYear()
-        );
-      }).length;
-
-      data.push(count);
-    }
-
-    setWeeklyChartData({
-  labels,
-  datasets: [
-    {
-      label: "Orders Completed",
-      data,
-      borderColor: "#10B981",
-      backgroundColor: "rgba(16,185,129,0.1)",
-      tension: 0.3,
-    },
-  ],
-});
-
-  };
+  
 
   // -------------------------
   // Logout
   // -------------------------
+  const [searchTerm, setSearchTerm] = useState("");
   const handleLogout = () => {
     localStorage.clear();
     router.push("/");
@@ -297,6 +268,11 @@ export default function SalesDashboard() {
   // -------------------------
   // UI
   // -------------------------
+  const filteredProducts = products.filter((product) =>
+  product.productName
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase())
+);
   return (
     <div
       className={
@@ -377,11 +353,60 @@ export default function SalesDashboard() {
         ))}
       </div>
 
-      {/* Weekly Chart */}
+      <div className="mb-4">
+  <input
+    type="text"
+    placeholder="Search products..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="w-full md:w-80 px-4 py-2 border rounded-lg
+               bg-white dark:bg-gray-700
+               text-black dark:text-white
+               border-gray-300 dark:border-gray-600
+               focus:outline-none focus:ring-2 focus:ring-green-500"
+  />
+</div>
+
+      {/* Product Table */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold mb-4">Last 7 Days Orders</h2>
-        <Line data={weeklyChartData} />
-      </div>
+  <h2 className="text-xl font-semibold mb-4">Inventory</h2>
+
+  {filteredProducts.length === 0 ? (
+  <p className="text-gray-500">
+    No matching products found.
+  </p>
+) : (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b dark:border-gray-700">
+            <th className="text-left py-3">Product Name</th>
+            <th className="text-center py-3">Stock</th>
+            <th className="text-right py-3">Price</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filteredProducts.map((product) => (
+            <tr
+              key={product.id}
+              className="border-b dark:border-gray-700 hover:bg-green-50 dark:hover:bg-gray-700"
+            >
+              <td className="py-3">{product.productName}</td>
+              <td className="text-center">{product.productQty}</td>
+              <td className="text-right">
+  Ush {Number(product.ProductPrice).toLocaleString("en-UG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}
+</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
 
       {/* Top Clients */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 mb-8">
