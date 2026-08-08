@@ -1,14 +1,69 @@
 "use client";
 
-import { useState } from "react";
-import { Bar, Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from "chart.js";
+import { useState, useEffect } from "react";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { getAuth } from "firebase/auth";
+import { orderBy } from "firebase/firestore";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
+interface Product {
+  id: string;
+  productName: string;
+  productQty: number;
+  ProductPrice: number;
+}
 export default function SupervisorDashboard() {
   const router = useRouter();
+  const [products, setProducts] = useState<Product[]>([]);
+  const productsRef = collection(db, "products");
+
+  // -------------------------
+    // Firestore real-time listener
+    // -------------------------
+    useEffect(() => {
+  const productsQuery = query(
+  collection(db, "products"),
+  where("productQty", ">", 0),
+  orderBy("productName", "asc")
+);
+  const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+    const productData = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    })) as Product[];
+  
+    setProducts(productData);
+  });
+  
+      const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+        if (!user) return;
+  
+        const ordersRef = collection(db, "orders");
+        const q = query(ordersRef, where("orderedBy", "==", user.email));
+  
+        
+  
+        return () => unsubscribeProducts();
+      });
+  
+      return () => unsubscribeAuth();
+    }, []);
 
   // Team performance summary
   const [teamPerformance, setTeamPerformance] = useState([
@@ -35,11 +90,21 @@ export default function SupervisorDashboard() {
     { id: 2, task: "Review report Q4", time: "4h ago" },
     { id: 3, task: "Assign new leads", time: "6h ago" },
   ];
+  
 
+  // -------------------------
+  // Logout
+  // -------------------------
+  const [searchTerm, setSearchTerm] = useState("");
   const handleLogout = () => {
-    console.log("Supervisor logged out");
-    router.push("/"); // redirect to home or login page
+    localStorage.clear();
+    router.push("/");
   };
+  const filteredProducts = products.filter((product) =>
+  product.productName
+    .toLowerCase()
+    .includes(searchTerm.toLowerCase())
+);
 
   return (
     <div className="min-h-screen bg-blue-50 font-sans p-8">
@@ -69,11 +134,78 @@ export default function SupervisorDashboard() {
         </div>
       </div>
 
-      {/* Weekly Team Orders Chart */}
-      <div className="bg-white shadow rounded-xl p-6 mb-8">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Weekly Team Orders</h2>
-        <Line data={weeklyOrdersData} />
-      </div>
+      <input
+    type="text"
+    placeholder="Search products..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="w-full md:w-80 px-4 py-2 border rounded-lg
+               bg-white dark:bg-gray-700
+               text-black dark:text-white
+               border-gray-300 dark:border-gray-600
+               focus:outline-none focus:ring-2 focus:ring-green-500"
+  />
+
+      {/* Product Table */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 mb-8">
+  <h2 className="text-xl font-semibold mb-4">Inventory</h2>
+  <p className="mt-1 text-slate-600">
+                      Showing{" "}
+                      <span className="font-bold text-slate-900">
+                        {filteredProducts.length}
+                      </span>{" "}
+                      products
+                    </p>
+
+  {filteredProducts.length === 0 ? (
+  <p className="text-gray-500">
+    No matching products found.
+  </p>
+) : (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b dark:border-gray-700">
+            <th className="text-left py-3">Product Name</th>
+            <th className="text-center py-3">Stock</th>
+            <th className="text-right py-3">Price</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filteredProducts.map((product) => (
+            <tr
+              key={product.id}
+              className="border-b dark:border-gray-700 hover:bg-green-50 dark:hover:bg-gray-700"
+            >
+              <td className="py-3">{product.productName}</td>
+              <td className="text-center">{product.productQty}</td>
+              <td className="text-right">
+  Ush {Number(product.ProductPrice).toLocaleString("en-UG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}
+</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className="text-sm font-semibold text-slate-600">
+                    Showing{" "}
+                    <span className="text-slate-900 font-extrabold">
+                      {filteredProducts.length}
+                    </span>{" "}
+                    of{" "}
+                    <span className="text-slate-900 font-extrabold">
+                      {products.length}
+                    </span>{" "}
+                    products
+                  </p>
+    </div>
+  )}
+</div>
+
 
       {/* Team Performance Table */}
       <div className="bg-white shadow rounded-xl p-6 mb-8">

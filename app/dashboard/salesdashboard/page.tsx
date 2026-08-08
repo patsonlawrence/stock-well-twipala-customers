@@ -125,6 +125,7 @@ const productsRef = collection(db, "products");
   useEffect(() => {
 const productsQuery = query(
   collection(db, "products"),
+  where("productQty", ">", 0),
   orderBy("productName", "asc")
 );
 const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
@@ -370,6 +371,13 @@ const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
       {/* Product Table */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 mb-8">
   <h2 className="text-xl font-semibold mb-4">Inventory</h2>
+  <p className="mt-1 text-slate-600">
+                      Showing{" "}
+                      <span className="font-bold text-slate-900">
+                        {filteredProducts.length}
+                      </span>{" "}
+                      products
+                    </p>
 
   {filteredProducts.length === 0 ? (
   <p className="text-gray-500">
@@ -404,6 +412,17 @@ const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
           ))}
         </tbody>
       </table>
+      <p className="text-sm font-semibold text-slate-600">
+                    Showing{" "}
+                    <span className="text-slate-900 font-extrabold">
+                      {filteredProducts.length}
+                    </span>{" "}
+                    of{" "}
+                    <span className="text-slate-900 font-extrabold">
+                      {products.length}
+                    </span>{" "}
+                    products
+                  </p>
     </div>
   )}
 </div>
