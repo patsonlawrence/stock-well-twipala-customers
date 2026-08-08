@@ -158,7 +158,7 @@ const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   return (
     <ProtectedRoute allowedRoles={["admin","superuser","manager"]}>
-<div className="min-h-screen bg-slate-100">
+<div className="min-h-screen bg-slate-300">
 
     {/* Header */}
 

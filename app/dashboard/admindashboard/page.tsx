@@ -24,6 +24,7 @@ ChartJS.register(
   Legend
 );
 import ProtectedRoute from "@/app/components/ProtectedRoute";
+import Link from "next/link";
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [username, setUsername] = useState("");
@@ -82,6 +83,7 @@ export default function AdminDashboard() {
             <li><a href="/users" className="hover:text-purple-200">👥 Users</a></li>
             <li><a href="/salesoutlets" className="hover:text-purple-200">🏪 Outlets</a></li>
             <li><a href="/orderadmin" className="hover:text-purple-200">🧾 Orders</a></li>
+            <li><Link href="/shipments" className="hover:text-purple-200">📦 Shipments</Link></li>
             <li><a href="/locationMerchandiser" className="hover:text-purple-200">🧾 Locations</a></li>
           </ul>
         </nav>
