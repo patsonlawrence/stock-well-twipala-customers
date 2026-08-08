@@ -752,6 +752,8 @@ export default function AdminInventoryPage() {
                           ? "Low Stock"
                           : product.productQty < 15
                           ? "Medium Stock"
+                          : product.productQty > 100
+                          ? "High Stock"
                           : "In Stock";
 
                       const statusClasses =
@@ -759,6 +761,8 @@ export default function AdminInventoryPage() {
                           ? "bg-red-100 text-red-800 border-red-200"
                           : product.productQty < 15
                           ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                          : product.productQty > 100
+                          ? "bg-green-200 text-green-800 border-green-400"
                           : "bg-green-100 text-green-800 border-green-200";
 
                       return (
