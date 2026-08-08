@@ -125,7 +125,7 @@ const productsRef = collection(db, "products");
   useEffect(() => {
 const productsQuery = query(
   collection(db, "products"),
-  where("productQty", ">", 0),
+  //where("productQty", ">", 0),
   orderBy("productName", "asc")
 );
 const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
