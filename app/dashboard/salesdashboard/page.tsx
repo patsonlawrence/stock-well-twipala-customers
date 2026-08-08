@@ -15,10 +15,17 @@ import {
 } from "chart.js";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getAuth } from "firebase/auth";
-import { orderBy } from "firebase/firestore";
+//import { orderBy } from "firebase/firestore";
 
 ChartJS.register(
   CategoryScale,
@@ -78,185 +85,301 @@ export default function SalesDashboard() {
   const router = useRouter();
   const auth = getAuth();
 
-  // -------------------------
-  // States
-  // -------------------------
-  const [username, setUsername] = useState("");
-  const [darkMode, setDarkMode] = useState(false);
+  /// -------------------------
+// States
+// -------------------------
 
-  const [weeklyOrders, setWeeklyOrders] = useState(0);
-  const [monthlyOrders, setMonthlyOrders] = useState(0);
-  const [yearlyOrders, setYearlyOrders] = useState(0);
+const [username, setUsername] = useState("");
+const [darkMode, setDarkMode] = useState(false);
 
-  const [revenueTotals, setRevenueTotals] = useState({
-    week: 0,
-    month: 0,
-    year: 0,
-    lifetime: 0,
-  });
+const [weeklyOrders, setWeeklyOrders] = useState(0);
+const [monthlyOrders, setMonthlyOrders] = useState(0);
+const [yearlyOrders, setYearlyOrders] = useState(0);
 
-  const [topClients, setTopClients] = useState<Client[]>([]);
-  const [topProducts, setTopProducts] = useState<Record<string, number>>({});
-
-  
-const [products, setProducts] = useState<Product[]>([]);
-const productsRef = collection(db, "products");
-
-
-
-
-  // -------------------------
-  // Load username & dark mode
-  // -------------------------
-  useEffect(() => {
-    setUsername(localStorage.getItem("userName") || "User");
-    setDarkMode(localStorage.getItem("darkMode") === "true");
-  }, []);
-
-  const toggleDarkMode = () => {
-    const updated = !darkMode;
-    setDarkMode(updated);
-    localStorage.setItem("darkMode", updated.toString());
-  };
-
-  // -------------------------
-  // Firestore real-time listener
-  // -------------------------
-  useEffect(() => {
-const productsQuery = query(
-  collection(db, "products"),
-  //where("productQty", ">", 0),
-  orderBy("productName", "asc")
-);
-const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
-  const productData = snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  })) as Product[];
-
-  setProducts(productData);
+const [revenueTotals, setRevenueTotals] = useState({
+  week: 0,
+  month: 0,
+  year: 0,
+  lifetime: 0,
 });
 
-    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (!user) return;
+const [topClients, setTopClients] = useState<Client[]>([]);
+const [topProducts, setTopProducts] =
+  useState<Record<string, number>>({});
 
-      const ordersRef = collection(db, "orders");
-      const q = query(ordersRef, where("orderedBy", "==", user.email));
+const [products, setProducts] = useState<Product[]>([]);
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const orders: Order[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+const toggleDarkMode = () => {
+  const updated = !darkMode;
+  setDarkMode(updated);
+  localStorage.setItem("darkMode", updated.toString());
+};
+useEffect(() => {
+  setDarkMode(
+    localStorage.getItem("darkMode") === "true"
+  );
+}, []);
 
-        calculateStats(orders);
-        calculateTopClients(orders);
-        calculateTopProducts(orders);        
-      });
+// -------------------------
+// Calculate Stats
+// -------------------------
 
-      return () => unsubscribe(); unsubscribeProducts();
+const calculateStats = (orders: Order[]) => {
+  const now = new Date();
+
+  const startOfYear = new Date(
+    now.getFullYear(),
+    0,
+    1
+  );
+
+  const startOfMonth = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    1
+  );
+
+  const startOfWeek = new Date(now);
+
+  startOfWeek.setDate(
+    now.getDate() - now.getDay()
+  );
+
+  let week = 0;
+  let month = 0;
+  let year = 0;
+
+  let revenueWeek = 0;
+  let revenueMonth = 0;
+  let revenueYear = 0;
+  let revenueLifetime = 0;
+
+  orders.forEach((order) => {
+    const date = order.createdAt?.toDate
+      ? order.createdAt.toDate()
+      : new Date(order.createdAt || 0);
+
+    const total = order.total || 0;
+
+    if (date >= startOfWeek) {
+      week++;
+      revenueWeek += total;
+    }
+
+    if (date >= startOfMonth) {
+      month++;
+      revenueMonth += total;
+    }
+
+    if (date >= startOfYear) {
+      year++;
+      revenueYear += total;
+    }
+
+    revenueLifetime += total;
+  });
+
+  setWeeklyOrders(week);
+  setMonthlyOrders(month);
+  setYearlyOrders(year);
+
+  setRevenueTotals({
+    week: revenueWeek,
+    month: revenueMonth,
+    year: revenueYear,
+    lifetime: revenueLifetime,
+  });
+};
+
+// -------------------------
+// Calculate Top Clients
+// -------------------------
+
+const calculateTopClients = (orders: Order[]) => {
+  const clientMap: Record<string, number> = {};
+
+  orders.forEach((order) => {
+    const name = order.customer || "Unknown";
+
+    clientMap[name] =
+      (clientMap[name] || 0) + 1;
+  });
+
+  const cleaned = Object.entries(clientMap)
+    .map(([name, count]) => ({
+      id: name,
+      name,
+      orders: count,
+    }))
+    .sort((a, b) => b.orders - a.orders)
+    .slice(0, 5);
+
+  setTopClients(cleaned);
+};
+
+// -------------------------
+// Calculate Top Products
+// -------------------------
+
+const calculateTopProducts = (orders: Order[]) => {
+  const map: Record<string, number> = {};
+
+  orders.forEach((order) => {
+    order.items?.forEach((item) => {
+      map[item.name] =
+        (map[item.name] || 0) + item.qty;
     });
+  });
 
-    return () => unsubscribeAuth();
-  }, []);
+  const sorted = Object.entries(map)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
 
-  // -------------------------
-  // FIXED STAT CALCULATOR
-  // -------------------------
-  const calculateStats = (orders: Order[]) => {
-    const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
+  const results: Record<string, number> = {};
 
-    let week = 0,
-      month = 0,
-      year = 0;
+  sorted.forEach(([name, qty]) => {
+    results[name] = qty;
+  });
 
-    let revenueWeek = 0,
-      revenueMonth = 0,
-      revenueYear = 0,
-      revenueLifetime = 0;
+  setTopProducts(results);
+};
+useEffect(() => {
+  // --------------------------------
+  // PRODUCTS LISTENER
+  // --------------------------------
 
-    orders.forEach((order) => {
-      const date = order.createdAt?.toDate
-        ? order.createdAt.toDate()
-        : new Date(order.createdAt || 0);
+  const productsQuery = query(
+    collection(db, "products"),
+    orderBy("productName", "asc")
+  );
 
-      const total = order.total || 0;
+  const unsubscribeProducts = onSnapshot(
+    productsQuery,
+    (snapshot) => {
+      const productData = snapshot.docs.map((productDoc) => ({
+        id: productDoc.id,
+        ...productDoc.data(),
+      })) as Product[];
 
-      if (date >= startOfWeek) {
-        week++;
-        revenueWeek += total;
+      setProducts(productData);
+    }
+  );
+
+  // --------------------------------
+  // AUTH LISTENER
+  // --------------------------------
+
+  let unsubscribeOrders: (() => void) | undefined;
+
+  const unsubscribeAuth = auth.onAuthStateChanged(
+    async (user) => {
+      if (!user) {
+        setUsername("User");
+        return;
       }
-      if (date >= startOfMonth) {
-        month++;
-        revenueMonth += total;
+
+      console.log("Logged in user:", user);
+      console.log("Firebase UID:", user.uid);
+      console.log("Firebase email:", user.email);
+
+      // --------------------------------
+      // GET USERNAME FROM USERS COLLECTION
+      // --------------------------------
+
+      try {
+        const usersRef = collection(db, "users");
+
+        const userQuery = query(
+          usersRef,
+          where("uid", "==", user.uid)
+        );
+
+        const userSnapshot = await getDocs(userQuery);
+
+        console.log(
+          "Matching user documents:",
+          userSnapshot.size
+        );
+
+        if (!userSnapshot.empty) {
+          const userData =
+            userSnapshot.docs[0].data();
+
+          console.log("User data:", userData);
+
+          setUsername(
+            userData.username || "User"
+          );
+        } else {
+          console.log(
+            "No matching user document found."
+          );
+
+          // Fallback
+          setUsername(
+            user.displayName ||
+              user.email?.split("@")[0] ||
+              "User"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Failed to load username:",
+          error
+        );
+
+        setUsername(
+          user.displayName ||
+            user.email?.split("@")[0] ||
+            "User"
+        );
       }
-      if (date >= startOfYear) {
-        year++;
-        revenueYear += total;
-      }
 
-      revenueLifetime += total;
-    });
+      // --------------------------------
+      // GET ORDERS
+      // --------------------------------
 
-    setWeeklyOrders(week);
-    setMonthlyOrders(month);
-    setYearlyOrders(year);
-    setRevenueTotals({
-      week: revenueWeek,
-      month: revenueMonth,
-      year: revenueYear,
-      lifetime: revenueLifetime,
-    });
+      const ordersQuery = query(
+        collection(db, "orders"),
+        where(
+          "orderedBy",
+          "==",
+          user.email
+        )
+      );
+
+      unsubscribeOrders = onSnapshot(
+        ordersQuery,
+        (snapshot) => {
+          const orders: Order[] =
+            snapshot.docs.map(
+              (orderDoc) => ({
+                id: orderDoc.id,
+                ...orderDoc.data(),
+              })
+            );
+
+          calculateStats(orders);
+          calculateTopClients(orders);
+          calculateTopProducts(orders);
+        }
+      );
+    }
+  );
+
+  // --------------------------------
+  // CLEANUP
+  // --------------------------------
+
+  return () => {
+    unsubscribeProducts();
+    unsubscribeAuth();
+
+    if (unsubscribeOrders) {
+      unsubscribeOrders();
+    }
   };
-
-  // -------------------------
-  // Top Clients
-  // -------------------------
-  const calculateTopClients = (orders: Order[]) => {
-    const clientMap: Record<string, number> = {};
-
-    orders.forEach((order) => {
-      const name = order.customer || "Unknown";
-      clientMap[name] = (clientMap[name] || 0) + 1;
-    });
-
-    const cleaned = Object.entries(clientMap)
-      .map(([name, count]) => ({ id: name, name, orders: count }))
-      .sort((a, b) => b.orders - a.orders)
-      .slice(0, 5);
-
-    setTopClients(cleaned);
-  };
-
-  // -------------------------
-  // Top Products
-  // -------------------------
-  const calculateTopProducts = (orders: Order[]) => {
-    const map: Record<string, number> = {};
-
-    orders.forEach((order) => {
-      order.items?.forEach((item) => {
-        map[item.name] = (map[item.name] || 0) + item.qty;
-      });
-    });
-
-    const sorted = Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-
-    const results: Record<string, number> = {};
-    sorted.forEach(([name, qty]) => (results[name] = qty));
-
-    setTopProducts(results);
-  };
- 
-
-  
-
+}, []);
   // -------------------------
   // Logout
   // -------------------------
@@ -289,8 +412,8 @@ const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
             💼 Sales Dashboard
           </h1>
           <p className="text-blue-600 dark:text-blue-400 mt-1">
-            Welcome, {username}
-          </p>
+  Welcome, {username}
+</p>
         </div>
 
         <div className="flex items-center space-x-4">
@@ -473,12 +596,13 @@ const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
 
       {/* Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <Link href="/order" className="block">
-          <button className="w-full bg-green-100 dark:bg-gray-700 py-3 rounded-xl shadow">
-            Add Order
-          </button>
-        </Link>
-
+        <button
+  type="button"
+  disabled
+  className="w-full bg-green-100 dark:bg-gray-700 py-3 rounded-xl shadow opacity-50 cursor-not-allowed"
+>
+  Add Order
+</button>
         <button
           onClick={handleLogout}
           className="bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl"

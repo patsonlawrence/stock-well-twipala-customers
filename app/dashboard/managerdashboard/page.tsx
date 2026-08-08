@@ -1,24 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import router from "next/navigation";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export default function ManagerDashboard() {
+  const router = useRouter();
+
+const [username, setUsername] = useState("User");
   const [tasks, setTasks] = useState([
     { id: 1, title: "Approve Orders", completed: false },
     { id: 2, title: "Review Inventory Report", completed: true },
     { id: 3, title: "Team Meeting at 3 PM", completed: false },
   ]);
+
+  useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      setUsername("User");
+      return;
+    }
+
+    try {
+      const usersRef = collection(db, "users");
+
+      const userQuery = query(
+        usersRef,
+        where("uid", "==", user.uid)
+      );
+
+      const userSnapshot = await getDocs(userQuery);
+
+      if (!userSnapshot.empty) {
+        const userData = userSnapshot.docs[0].data();
+
+        setUsername(userData.username || "User");
+      } else {
+        setUsername(
+          user.displayName ||
+            user.email?.split("@")[0] ||
+            "User"
+        );
+      }
+    } catch (error) {
+      console.error("Failed to load username:", error);
+
+      setUsername(
+        user.displayName ||
+          user.email?.split("@")[0] ||
+          "User"
+      );
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
+
   const handleLogout = async () => {
   try {
     await signOut(auth);
 
     localStorage.clear();
 
-    window.location.href = "/login";
+    router.push("/login");
   } catch (error) {
     console.error(error);
     alert("Logout failed.");
@@ -34,22 +86,29 @@ export default function ManagerDashboard() {
   return (
     <div className="p-8 bg-gradient-to-b from-purple-50 to-white min-h-screen font-sans">
       {/* Header */}
-      <header className="mb-8 flex items-center justify-between">
+      <header className="bg-white shadow-lg rounded-xl p-6 mb-8 flex justify-between items-center">
   <div>
-    <h1 className="text-3xl font-bold text-purple-700 mb-2">
-      👋 Welcome, Manager!
+    <h1 className="text-3xl font-bold text-purple-700">
+      Manager Dashboard
     </h1>
-    <p className="text-purple-400">
-      Here's what's happening today.
+
+    <p className="text-gray-500 mt-1">
+      Welcome, {username}
     </p>
   </div>
 
-  <button
-    onClick={handleLogout}
-    className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg shadow"
-  >
-    Logout
-  </button>
+  <div className="flex items-center gap-4">
+    <div className="w-10 h-10 rounded-full bg-purple-700 text-white flex items-center justify-center font-bold">
+      {username.charAt(0).toUpperCase()}
+    </div>
+
+    <button
+      onClick={handleLogout}
+      className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg shadow"
+    >
+      Logout
+    </button>
+  </div>
 </header>
 
       {/* Stats Cards */}
