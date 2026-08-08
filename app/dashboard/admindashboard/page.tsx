@@ -13,6 +13,16 @@ import {
   Legend,
 } from "chart.js";
 import { useRouter } from "next/navigation";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { db } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+
 
 ChartJS.register(
   CategoryScale,
@@ -50,12 +60,61 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    setUsername(localStorage.getItem("userName") || "User");
-  }, []);
+  const auth = getAuth();
 
-  const handleLogout = () => {
-    router.push("/");
-  };
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      setUsername("User");
+      return;
+    }
+
+    console.log("Admin logged in:", user.email);
+    console.log("Admin UID:", user.uid);
+
+    try {
+      const usersRef = collection(db, "users");
+
+      const userQuery = query(
+        usersRef,
+        where("uid", "==", user.uid)
+      );
+
+      const userSnapshot = await getDocs(userQuery);
+
+      if (!userSnapshot.empty) {
+        const userData = userSnapshot.docs[0].data();
+
+        console.log("Admin user data:", userData);
+        console.log("Admin username:", userData.username);
+
+        setUsername(userData.username || "User");
+      } else {
+        console.log("No user document found for UID:", user.uid);
+
+        setUsername("User");
+      }
+    } catch (error) {
+      console.error("Failed to load admin username:", error);
+      setUsername("User");
+    }
+  });
+
+  return () => unsubscribe();
+}, []);
+
+  const handleLogout = async () => {
+  try {
+    const auth = getAuth();
+
+    await signOut(auth);
+
+    localStorage.clear();
+    router.push("/login");
+  } catch (error) {
+    console.error("Logout failed:", error);
+    alert("Logout failed.");
+  }
+};
 
   return (
     <ProtectedRoute allowedRoles={["admin","superuser"]}>
