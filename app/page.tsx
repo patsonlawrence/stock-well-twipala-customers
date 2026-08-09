@@ -29,7 +29,8 @@ export default function Home() {
       <header style={headerStyle}>
         <div style={logoStyle}>
           <span style={logoMark}>✦</span>
-          <span>TWIPALA</span>
+          <span>TWIPALA Holdings Ltd</span>  
+          
         </div>
 
         <div style={taglineStyle}>
