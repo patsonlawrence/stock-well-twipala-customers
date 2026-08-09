@@ -68,23 +68,31 @@ export default function Home() {
 function MobileHome() {
   const router = useRouter();
 
-  const menu = [
+  const menu: {
+  title: string;
+  icon: string;
+  path: string;
+  disabled?: boolean;
+}[] = [
     {
       title: "BackOffice",
       icon: "◈",
       path: "/login",
     },
     {
+      disabled: true,
       title: "Offers",
       icon: "◇",
       path: "/offers",
     },
     {
+      disabled: true,
       title: "Orders",
       icon: "🛒",
       path: "/orders",
     },
     {
+      disabled: true,
       title: "Sign Up",
       icon: "♙",
       path: "/signup",
@@ -116,23 +124,18 @@ function MobileHome() {
       <div style={mobileMenuStyle}>
         {menu.map((item) => (
           <button
-            key={item.title}
-            onClick={() => router.push(item.path)}
-            style={menuButtonStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-3px)";
-              e.currentTarget.style.boxShadow =
-                "0 12px 30px rgba(0,0,0,0.25)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow =
-                "0 8px 20px rgba(0,0,0,0.15)";
-            }}
-          >
-            <span style={menuIconStyle}>{item.icon}</span>
-            <span>{item.title}</span>
-          </button>
+  key={item.title}
+  disabled={item.disabled}
+  onClick={() => router.push(item.path)}
+  style={{
+    ...menuButtonStyle,
+    opacity: item.disabled ? 0.5 : 1,
+    cursor: item.disabled ? "not-allowed" : "pointer",
+  }}
+>
+  <span style={menuIconStyle}>{item.icon}</span>
+  <span>{item.title}</span>
+</button>
         ))}
       </div>
     </section>
