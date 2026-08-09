@@ -15,7 +15,10 @@ export default function SupervisorDashboard() {
 
   const router = useRouter();
 const [username, setUsername] = useState("User");
-const [products, setProducts] = useState<Product[]>([]);  
+const [products, setProducts] = useState<Product[]>([]); 
+const [salesTransactionCount, setSalesTransactionCount] = useState(0);
+const [monthlySales, setMonthlySales] = useState(0);
+const [monthlySalary, setMonthlySalary] = useState(0); 
   
   // -------------------------
     // Firestore real-time listener
@@ -29,6 +32,75 @@ const [products, setProducts] = useState<Product[]>([]);
     collection(db, "products"),
     orderBy("productName", "asc")
   );
+
+  // -------------------------
+// Sales Transactions listener
+// -------------------------
+
+const transactionsQuery = query(
+  collection(db, "transactions")
+);
+
+const unsubscribeTransactions = onSnapshot(
+  transactionsQuery,
+  (snapshot) => {
+    const now = new Date();
+
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    let transactionCount = 0;
+    let totalSales = 0;
+
+    snapshot.docs.forEach((transactionDoc) => {
+      const transaction = transactionDoc.data();
+
+      // Only completed sales count
+      if (
+        transaction.type !== "sale" 
+      ) {
+        return;
+      }
+
+      if (!transaction.createdAt) {
+        return;
+      }
+
+      let transactionDate: Date;
+
+      if (transaction.createdAt?.toDate) {
+        transactionDate = transaction.createdAt.toDate();
+      } else {
+        transactionDate = new Date(transaction.createdAt);
+      }
+
+      if (isNaN(transactionDate.getTime())) {
+        return;
+      }
+
+      // Only count sales from the current month
+      if (
+        transactionDate.getMonth() === currentMonth &&
+        transactionDate.getFullYear() === currentYear
+      ) {
+        transactionCount += 1;
+        totalSales += Number(transaction.amount || 0);
+      }
+    });
+
+    const salary = totalSales * 0.01;
+
+    setSalesTransactionCount(transactionCount);
+    setMonthlySales(totalSales);
+    setMonthlySalary(salary);
+  },
+  (error) => {
+    console.error(
+      "Failed to load sales transactions:",
+      error
+    );
+  }
+);
 
   const unsubscribeProducts = onSnapshot(
     productsQuery,
@@ -99,9 +171,10 @@ const [products, setProducts] = useState<Product[]>([]);
   );
 
   return () => {
-    unsubscribeProducts();
-    unsubscribeAuth();
-  };
+  unsubscribeProducts();
+  unsubscribeTransactions();
+  unsubscribeAuth();
+};
 }, []);
 
   // Team performance summary
@@ -184,40 +257,89 @@ const [products, setProducts] = useState<Product[]>([]);
     </header>
 
 
-    {/* Team Stats Cards */}
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+    {/* =====================================================
+    SUPERVISOR SALES STATISTICS
+===================================================== */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
 
-      <div className="bg-white shadow rounded-xl p-6 hover:scale-105 transform transition">
+  {/* Sales Transactions */}
+  <div className="bg-white shadow rounded-xl p-6 hover:shadow-md transition">
+    <div className="flex items-center justify-between">
+
+      <div>
         <h2 className="text-sm text-gray-400">
-          Team Orders Completed
+          Sales Transactions
         </h2>
 
-        <p className="text-2xl font-bold text-blue-700">
-          37
+        <p className="text-2xl font-bold text-blue-700 mt-1">
+          {salesTransactionCount.toLocaleString()}
+        </p>
+
+        <p className="text-xs text-gray-400 mt-1">
+          Completed this month
         </p>
       </div>
 
-      <div className="bg-white shadow rounded-xl p-6 hover:scale-105 transform transition">
-        <h2 className="text-sm text-gray-400">
-          Total Targets
-        </h2>
-
-        <p className="text-2xl font-bold text-blue-700">
-          53
-        </p>
-      </div>
-
-      <div className="bg-white shadow rounded-xl p-6 hover:scale-105 transform transition">
-        <h2 className="text-sm text-gray-400">
-          Pending Tasks
-        </h2>
-
-        <p className="text-2xl font-bold text-blue-700">
-          {pendingTasks.length}
-        </p>
+      <div className="w-11 h-11 rounded-full bg-blue-100 flex items-center justify-center text-xl">
+        🧾
       </div>
 
     </div>
+  </div>
+
+
+  {/* Total Sales */}
+  <div className="bg-white shadow rounded-xl p-6 hover:shadow-md transition">
+    <div className="flex items-center justify-between">
+
+      <div>
+        <h2 className="text-sm text-gray-400">
+          Total Sales
+        </h2>
+
+        <p className="text-2xl font-bold text-green-600 mt-1">
+          UGX {monthlySales.toLocaleString("en-UG")}
+        </p>
+
+        <p className="text-xs text-gray-400 mt-1">
+          Completed sales this month
+        </p>
+      </div>
+
+      <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-xl">
+        💰
+      </div>
+
+    </div>
+  </div>
+
+
+  {/* Monthly Salary */}
+  <div className="bg-white shadow rounded-xl p-6 hover:shadow-md transition">
+    <div className="flex items-center justify-between">
+
+      <div>
+        <h2 className="text-sm text-gray-400">
+          Accumulated Monthly Salary
+        </h2>
+
+        <p className="text-2xl font-bold text-purple-700 mt-1">
+          UGX {monthlySalary.toLocaleString("en-UG")}
+        </p>
+
+        <p className="text-xs text-gray-400 mt-1">
+          completed sales
+        </p>
+      </div>
+
+      <div className="w-11 h-11 rounded-full bg-purple-100 flex items-center justify-center text-xl">
+        💵
+      </div>
+
+    </div>
+  </div>
+
+</div>
 
 
     {/* Search */}
@@ -248,7 +370,7 @@ const [products, setProducts] = useState<Product[]>([]);
       <div className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-xl font-semibold text-gray-700">
-            Inventory
+            Inventory that needs your attention
           </h2>
 
           <p className="text-sm text-gray-500">
@@ -335,91 +457,7 @@ const [products, setProducts] = useState<Product[]>([]);
     </div>
 
 
-    {/* Team Performance */}
-    <div className="bg-white shadow rounded-xl p-6 mb-8">
-
-      <h2 className="text-xl font-semibold text-gray-700 mb-4">
-        Team Performance
-      </h2>
-
-      <div className="overflow-x-auto">
-
-        <table className="min-w-full divide-y divide-gray-200">
-
-          <thead>
-            <tr>
-
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                Name
-              </th>
-
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                Orders Completed
-              </th>
-
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                Target
-              </th>
-
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-500">
-                Progress
-              </th>
-
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-gray-200">
-
-            {teamPerformance.map((member) => {
-
-              const progress = Math.min(
-                (member.orders / member.target) * 100,
-                100
-              );
-
-              return (
-                <tr key={member.id}>
-
-                  <td className="px-4 py-2">
-                    {member.name}
-                  </td>
-
-                  <td className="px-4 py-2">
-                    {member.orders}
-                  </td>
-
-                  <td className="px-4 py-2">
-                    {member.target}
-                  </td>
-
-                  <td className="px-4 py-2">
-
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
-
-                      <div
-                        className="bg-blue-500 h-2.5 rounded-full"
-                        style={{
-                          width: `${progress}%`,
-                        }}
-                      />
-
-                    </div>
-
-                  </td>
-
-                </tr>
-              );
-
-            })}
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-
+    
 
     {/* Pending Tasks */}
     <div className="bg-white shadow rounded-xl p-6 mb-8">
