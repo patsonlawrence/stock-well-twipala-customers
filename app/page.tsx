@@ -28,13 +28,17 @@ export default function Home() {
       {/* Brand */}
       <header style={headerStyle}>
         <div style={logoStyle}>
-          <span style={logoMark}>✦</span>
-          <span>TWIPALA Holdings Ltd</span>  
-          
-        </div>
+  <img
+    src="/icons/twipalalogo.PNG"
+    alt="Twipala Logo"
+    style={logoImageStyle}
+  />
+
+  <span>TWIPALA</span>
+</div>
 
         <div style={taglineStyle}>
-          Premium. Simple. Reliable.
+          Let's Grow Together
         </div>
       </header>
 
@@ -46,14 +50,12 @@ export default function Home() {
         <p style={eyebrowStyle}>WELCOME</p>
 
         <h1 style={headingStyle}>
-          Everything you need,
-          <br />
-          <span style={headingAccent}>in one place.</span>
+          Great results start with great effort.                     
         </h1>
 
-        <p style={descriptionStyle}>
-          Access our services, manage your orders and discover
-          our latest offers with ease.
+        <p style={descriptionStyle}>          
+          Every customer is an opportunity. Every effort counts. 
+          Let’s work smarter, serve better, and turn every opportunity into a sale.
         </p>
       </section>
 
@@ -266,7 +268,13 @@ function PromoCarousel() {
 /* =========================
    STYLES
 ========================= */
-
+const logoImageStyle: CSSProperties = {
+  width: "42px",
+  height: "42px",
+  objectFit: "cover",
+  borderRadius: "12px",
+  boxShadow: "0 8px 25px rgba(247,142,22,0.25)",
+};
 const pageStyle: CSSProperties = {
   minHeight: "100vh",
   width: "100%",
@@ -322,10 +330,11 @@ const headerStyle: CSSProperties = {
 const logoStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: "10px",
+  gap: "11px",
   fontSize: "18px",
-  fontWeight: "800",
-  letterSpacing: "2px",
+  fontWeight: "900",
+  letterSpacing: "2.5px",
+  color: "#ffffff",
 };
 
 const logoMark: CSSProperties = {

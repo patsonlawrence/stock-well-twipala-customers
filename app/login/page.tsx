@@ -265,7 +265,7 @@ export default function Login() {
             </div>
 
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-400">
-              Premium • Simple • Reliable
+              Let's Grow Together
             </p>
 
           </div>
