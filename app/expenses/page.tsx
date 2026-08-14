@@ -1405,7 +1405,7 @@ const expenseSummary = useMemo(() => {
               <div className="flex items-center gap-3">
 
                 <Link
-                  href="/admin"
+                  href="/dashboard/admindashboard"
                   className="text-purple-200 hover:text-white"
                 >
                   ← Dashboard
