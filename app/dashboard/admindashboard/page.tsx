@@ -563,6 +563,15 @@ const formatAmount = (amount: number) => {
               </Link>
             </li>
 
+            <li>
+              <Link
+                href="/expenses"
+                className="block hover:text-purple-200 transition"
+              >
+                💸 Expenses
+              </Link>
+            </li>
+
           </ul>
         </nav>
 
