@@ -248,7 +248,7 @@ export default function AdminInventoryPage() {
 
               <div>
                 <h1 className="text-3xl font-extrabold text-slate-900">
-                  Admin Inventory Management
+                  Manager Inventory Management
                 </h1>
 
                 <p className="mt-1 text-base text-slate-600">
@@ -259,7 +259,7 @@ export default function AdminInventoryPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() =>
-                    router.push("/dashboard/admindashboard")
+                    router.push("/dashboard/managerdashboard")
                   }
                   className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold shadow-sm transition"
                 >
@@ -859,11 +859,9 @@ export default function AdminInventoryPage() {
                           <td className="px-5 py-5">
                             <div className="flex justify-center gap-2">
 
+                              
                               <button
-                                onClick={() =>
-                                  editProduct(product)
-                                }
-                                disabled={loading}
+                                onClick={() => alert("You don't have permission to edit this product. Contact the admin.")}
                                 className="
                                   rounded-lg
                                   bg-blue-600
@@ -880,6 +878,7 @@ export default function AdminInventoryPage() {
                               >
                                 ✏ Edit
                               </button>
+                              
 
                               <button
                                 onClick={() =>

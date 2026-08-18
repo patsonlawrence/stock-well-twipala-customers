@@ -158,7 +158,7 @@ const [username, setUsername] = useState("User");
       <section>
         <h2 className="text-xl font-semibold text-purple-700 mb-4">🔗 Quick Links</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <a href="/admin/inventory" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
+          <a href="/admin/mgrInventory" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
             Inventory
           </a>
           <a href="/orderadmin" className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition">
