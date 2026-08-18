@@ -881,12 +881,7 @@ export default function AdminInventoryPage() {
                               
 
                               <button
-                                onClick={() =>
-                                  removeProduct(
-                                    product.productId
-                                  )
-                                }
-                                disabled={loading}
+                                onClick={() => alert("You don't have permission to delete this product. Contact the admin.")}
                                 className="
                                   rounded-lg
                                   bg-red-600
