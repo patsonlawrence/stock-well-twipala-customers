@@ -454,141 +454,6 @@ export default function SupervisorDashboard() {
 
       </div>
 
-
-      {/* =====================================================
-          INVENTORY SEARCH
-      ===================================================== */}
-
-      <div className="mb-4">
-
-        <input
-          type="text"
-          placeholder="Search products..."
-          value={searchTerm}
-          onChange={(e) =>
-            setSearchTerm(e.target.value)
-          }
-          className="
-            w-full md:w-80
-            px-4 py-2
-            border rounded-lg
-            bg-white
-            text-black
-            border-gray-300
-            focus:outline-none
-            focus:ring-2
-            focus:ring-blue-500
-          "
-        />
-
-      </div>
-
-
-      {/* =====================================================
-          PRODUCT TABLE
-      ===================================================== */}
-
-      <div className="bg-white shadow rounded-xl p-6 mb-8">
-
-        <div className="flex justify-between items-center mb-4">
-
-          <div>
-
-            <h2 className="text-xl font-semibold text-gray-700">
-              Inventory that needs your attention
-            </h2>
-
-            <p className="text-sm text-gray-500">
-              Showing {filteredProducts.length} of{" "}
-              {products.length} products
-            </p>
-
-          </div>
-
-        </div>
-
-
-        {filteredProducts.length === 0 ? (
-
-          <div className="text-center py-10 text-gray-500">
-            No products found.
-          </div>
-
-        ) : (
-
-          <div className="overflow-x-auto">
-
-            <table className="min-w-full">
-
-              <thead>
-
-                <tr className="border-b">
-
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
-                    Product
-                  </th>
-
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">
-                    Quantity
-                  </th>
-
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-600">
-                    Price
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                {filteredProducts.map((product) => (
-
-                  <tr
-                    key={product.id}
-                    className="
-                      border-b
-                      hover:bg-blue-50
-                      transition
-                    "
-                  >
-
-                    <td className="px-4 py-3 font-medium text-gray-800">
-                      {product.productName}
-                    </td>
-
-                    <td className="px-4 py-3 text-center text-gray-700">
-                      {product.productQty}
-                    </td>
-
-                    <td className="px-4 py-3 text-right font-medium text-gray-800">
-
-                      Ush{" "}
-
-                      {Number(
-                        product.ProductPrice
-                      ).toLocaleString("en-UG", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-
-                    </td>
-
-                  </tr>
-
-                ))}
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        )}
-
-      </div>
-
-
       {/* =====================================================
           PENDING TRANSACTIONS
       ===================================================== */}
@@ -810,6 +675,142 @@ export default function SupervisorDashboard() {
 
       </div>
 
+
+      {/* =====================================================
+          INVENTORY SEARCH
+      ===================================================== */}
+
+      <div className="mb-4">
+
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={searchTerm}
+          onChange={(e) =>
+            setSearchTerm(e.target.value)
+          }
+          className="
+            w-full md:w-80
+            px-4 py-2
+            border rounded-lg
+            bg-white
+            text-black
+            border-gray-300
+            focus:outline-none
+            focus:ring-2
+            focus:ring-blue-500
+          "
+        />
+
+      </div>
+
+
+      {/* =====================================================
+          PRODUCT TABLE
+      ===================================================== */}
+
+      <div className="bg-white shadow rounded-xl p-6 mb-8">
+
+        <div className="flex justify-between items-center mb-4">
+
+          <div>
+
+            <h2 className="text-xl font-semibold text-gray-700">
+              Inventory that needs your attention
+            </h2>
+
+            <p className="text-sm text-gray-500">
+              Showing {filteredProducts.length} of{" "}
+              {products.length} products
+            </p>
+
+          </div>
+
+        </div>
+
+
+        {filteredProducts.length === 0 ? (
+
+          <div className="text-center py-10 text-gray-500">
+            No products found.
+          </div>
+
+        ) : (
+
+          <div className="overflow-x-auto">
+
+            <table className="min-w-full">
+
+              <thead>
+
+                <tr className="border-b">
+
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">
+                    Product
+                  </th>
+
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-600">
+                    Quantity
+                  </th>
+
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-gray-600">
+                    Price
+                  </th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {filteredProducts.map((product) => (
+
+                  <tr
+                    key={product.id}
+                    className="
+                      border-b
+                      hover:bg-blue-50
+                      transition
+                    "
+                  >
+
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      {product.productName}
+                    </td>
+
+                    <td className="px-4 py-3 text-center text-gray-700">
+                      {product.productQty}
+                    </td>
+
+                    <td className="px-4 py-3 text-right font-medium text-gray-800">
+
+                      Ush{" "}
+
+                      {Number(
+                        product.ProductPrice
+                      ).toLocaleString("en-UG", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+
+                    </td>
+
+                  </tr>
+
+                ))}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        )}
+
+      </div>
+
+
+      
 
       {/* =====================================================
           QUICK ACTIONS
