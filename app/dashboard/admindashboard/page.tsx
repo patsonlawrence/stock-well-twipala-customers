@@ -14,6 +14,7 @@ import {
   Legend,
   TooltipItem,
   Scale,
+  Filler
 } from "chart.js";
 
 import { useRouter } from "next/navigation";
@@ -46,7 +47,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 type Transaction = {
   id: string;
