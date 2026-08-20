@@ -321,8 +321,7 @@ const payers = Array.from(
             Inventory
           </a>
 
-          <a
-            href="/orderadmin"
+          <a            
             className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-4 rounded-xl text-center shadow transition"
           >
             Orders
