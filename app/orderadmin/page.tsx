@@ -297,57 +297,124 @@ const toggleResolved = async (order: Order) => {
 
   try {
     await runTransaction(db, async (transaction) => {
-      const orderSnap = await transaction.get(orderRef);
+  // -----------------------------------
+  // 1. READ ORDER
+  // -----------------------------------
+  const orderSnap = await transaction.get(orderRef);
 
-      if (!orderSnap.exists()) {
-        throw new Error("Order not found");
-      }
-
-      const currentResolved = orderSnap.data().resolved;
-      const newResolved = !currentResolved;
-
-      for (const item of order.orderedItems) {
-        if (!item.productId) {
-          console.warn("Skipping item with no productId:", item);
-          continue;
-        }
-
-        const productRef = doc(db, "products", item.productId);
-        const productSnap = await transaction.get(productRef);
-
-        if (!productSnap.exists()) continue;
-
-        const data = productSnap.data();
-        const currentStock = Number(data.productQty ?? 0);
-        const qty = Number(item.productQty ?? 0);
-
-        if (qty <= 0) continue;
-
-        let updatedStock: number;
-
-if (newResolved) {
-  if (currentStock < qty) {
-    throw new Error(
-      `Not enough stock for ${item.productName}. Available: ${currentStock}, Required: ${qty}`
-    );
+  if (!orderSnap.exists()) {
+    throw new Error("Order not found");
   }
 
-  updatedStock = currentStock - qty;
-} else {
-  updatedStock = currentStock + qty;
-}
+  const currentResolved = orderSnap.data().resolved;
+  const newResolved = !currentResolved;
 
-transaction.update(productRef, {
-  productQty: updatedStock,
-});
-      }
+  // -----------------------------------
+  // 2. READ ALL PRODUCTS FIRST
+  // -----------------------------------
+  const productOperations: {
+    ref: any;
+    currentStock: number;
+    qty: number;
+    productName: string;
+  }[] = [];
 
-      transaction.update(orderRef, {
-        resolved: newResolved,
-        updatedAt: new Date(),
-      });
+  for (const item of order.orderedItems) {
+    if (!item.productId) {
+      console.warn(
+        "Skipping item with no productId:",
+        item
+      );
+      continue;
+    }
+
+    const productRef = doc(
+      db,
+      "products",
+      item.productId
+    );
+
+    // READ ONLY — no writes yet
+    const productSnap =
+      await transaction.get(productRef);
+
+    if (!productSnap.exists()) {
+      console.warn(
+        `Product not found: ${item.productName}`
+      );
+      continue;
+    }
+
+    const data = productSnap.data();
+
+    const currentStock =
+      Number(data.productQty ?? 0);
+
+    const qty =
+      Number(item.productQty ?? 0);
+
+    if (qty <= 0) {
+      continue;
+    }
+
+    // Save everything we need for the WRITE phase
+    productOperations.push({
+      ref: productRef,
+      currentStock,
+      qty,
+      productName: item.productName,
     });
+  }
 
+  // -----------------------------------
+  // 3. VALIDATE STOCK
+  // -----------------------------------
+  if (newResolved) {
+    for (const operation of productOperations) {
+      if (
+        operation.currentStock <
+        operation.qty
+      ) {
+        throw new Error(
+          `Not enough stock for ${operation.productName}. ` +
+          `Available: ${operation.currentStock}, ` +
+          `Required: ${operation.qty}`
+        );
+      }
+    }
+  }
+
+  // -----------------------------------
+  // 4. WRITE PRODUCT STOCK
+  // -----------------------------------
+  for (const operation of productOperations) {
+    let updatedStock: number;
+
+    if (newResolved) {
+      // RESOLVE → REMOVE STOCK
+      updatedStock =
+        operation.currentStock -
+        operation.qty;
+    } else {
+      // UNRESOLVE → RETURN STOCK
+      updatedStock =
+        operation.currentStock +
+        operation.qty;
+    }
+
+    transaction.update(operation.ref, {
+      productQty: updatedStock,
+    });
+  }
+
+  // -----------------------------------
+  // 5. WRITE ORDER STATUS
+  // -----------------------------------
+  transaction.update(orderRef, {
+    resolved: newResolved,
+    updatedAt: new Date(),
+  });
+});
     await loadOrders();
   } catch (error) {
     console.error("Toggle resolved failed:", error);
@@ -1824,26 +1891,25 @@ return (
                       bg-slate-200
                     ">
 
-                      <button
-                        type="button"
-                        onClick={() => toggleResolved(o)}
-                        title={
-                          o.resolved
-                            ? "Mark unresolved"
-                            : "Mark resolved"
-                        }
-                        className="
-                          bg-white
-                          py-3
-                          text-sm
-                          font-bold
-                          text-green-600
-                          transition
-                          hover:bg-green-50
-                        "
-                      >
-                        ✓
-                      </button>
+<button
+  onClick={() => toggleResolved(o)}
+  title={o.resolved ? "Return stock" : "Resolve order and deduct stock"}
+  className={`
+    px-3
+    py-2
+    rounded-xl
+    text-white
+    font-semibold
+    transition
+    ${
+      o.resolved
+        ? "bg-orange-500 hover:bg-orange-600"
+        : "bg-green-600 hover:bg-green-700"
+    }
+  `}
+>
+  {o.resolved ? "↩" : "✓"}
+</button>
 
                       <button
                         type="button"
